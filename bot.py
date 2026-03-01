@@ -52,7 +52,9 @@ mongo_collection = mongo_db.events
 
 
 # Create Memcached client
-memcache_client = memcache.Client([config["memcache"]["url"]], debug=0)
+memcache_client = memcache.Client(
+    [config["memcache"]["url"]], debug=(1 if args.debug else 0)
+)
 
 
 def memcache_key_for_guild_events(guild_id):
