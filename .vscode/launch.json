@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: iCalCord",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "bot.py",
+      "console": "integratedTerminal",
+      "args": [
+        "--debug",
+      ]
+    },
+  ]
+}

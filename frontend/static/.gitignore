@@ -1,0 +1,2 @@
+# When debugging, static ICS files will be dumped here
+*.ics

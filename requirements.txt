@@ -1,0 +1,7 @@
+discord.py >= 2.6.4
+icalendar >= 7.0.1
+pymongo >= 4.16.0
+python-memcached >= 1.59
+PyYAML >= 6.0.2
+requests >= 2.31.0
+rich >= 13.7.1

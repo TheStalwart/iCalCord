@@ -1,0 +1,37 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+  "name": "Python 3",
+  // Debian 12 Bookworm is officially supported by MongoDB 8.x,
+  // so it can be installed in the devcontainer.
+  // https://www.mongodb.com/docs/v8.0/installation/
+  // https://diditho.com/2025/02/10/how-to-set-up-mongodb-8-master-slave-on-debian-12-bookworm/
+  // systemd is not available in devcontainers, so run it manually:
+  // `sudo mongod --config /etc/mongod.conf`
+  // Instance of memcached can be run in a similar way.
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  // "features": {},
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "pip3 install --user -r requirements.txt",
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "af4jm.vscode-icalendar",
+        "DavidAnson.vscode-markdownlint",
+        "eamodio.gitlens",
+        "ms-python.black-formatter"
+      ]
+    }
+  },
+  "portsAttributes": {
+    "8080": {
+      "label": "http"
+    }
+  }
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+}
