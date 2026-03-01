@@ -148,14 +148,8 @@ def upsert_event(event_data: dict):
         raise
 
 
-def regenerate_static_ics_file(guild_id):
-    if not args.debug:
-        print(
-            f"Skipping regeneration of .ics file for guild ID: [yellow]{guild_id}[/yellow] (debug mode disabled)"
-        )
-        return
-
-    print(f"Regenerating .ics file for guild ID: [yellow]{guild_id}[/yellow]")
+def generate_ics_feed(guild_id):
+    print(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
     ics_path = os.path.join(FRONTEND_STATIC_PATH, f"{guild_id}.ics")
     events = mongo_collection.find({"guild_id": guild_id})
 
@@ -214,10 +208,14 @@ def regenerate_static_ics_file(guild_id):
         vfreebusy.stamp = datetime(2026, 3, 1, tzinfo=timezone.utc)
         ics.add_component(vfreebusy)
 
-    with open(ics_path, "wb") as ics_file:
-        ics_file.write(ics.to_ical())
+    ics_feed = ics.to_ical()
 
-    print(f"Saved .ics file to: [yellow]{ics_path}[/yellow]")
+    if args.debug:
+        with open(ics_path, "wb") as ics_file:
+            ics_file.write(ics_feed)
+            print(f"Saved static [green]{ics_path}[/green] file")
+
+    return ics_feed
 
 
 # Set up Discord API client
@@ -236,18 +234,9 @@ async def endpoint_handler_ics_feed_generator(request):
     if not guild_id.isdigit() or not (16 <= len(guild_id) <= 20):
         return web.json_response({"error": "Invalid guild_id format"}, status=400)
 
-    # TODO: serve from memory, because static files are only generated when debugging
     await fetch_and_store_events_for_guild(guild_id)
-    return web.FileResponse(
-        os.path.join(FRONTEND_STATIC_PATH, f"{guild_id}.ics"),
-        headers={"Content-Type": "text/calendar; charset=utf-8"},
-    )
-    # switch to this to serve from memory
-    # return web.Response(
-    #     body=ics_content,
-    #     content_type="text/calendar",
-    #     charset="utf-8"
-    # )
+    ics_feed = generate_ics_feed(guild_id)
+    return web.Response(body=ics_feed, content_type="text/calendar", charset="utf-8")
 
 
 async def start_http_server():
@@ -279,7 +268,6 @@ async def fetch_and_store_events_for_guild(guild_id):
     if lurkable_events_json is not None:
         for event_json in lurkable_events_json:
             upsert_event(event_json)
-        regenerate_static_ics_file(guild_id)
         return
 
     print(
@@ -292,7 +280,6 @@ async def fetch_and_store_events_for_guild(guild_id):
             f"Using cached discord.py response for guild ID: [yellow]{guild_id}[/yellow]"
         )
         pprint(cached_response)
-        regenerate_static_ics_file(guild_id)
         return
 
     guild = discord_client.get_guild(guild_id)
@@ -320,7 +307,6 @@ async def fetch_and_store_events_for_guild(guild_id):
 
     # TODO: Delete upcoming events that are absent from API response?
     # Is there a more reliable way to detect deleted events than relying on API response consistency?
-    regenerate_static_ics_file(guild_id)
 
 
 @discord_client.event

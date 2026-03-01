@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python Debugger: iCalCord",
+      "name": "Python Debugger: bot.py --debug",
       "type": "debugpy",
       "request": "launch",
       "program": "bot.py",
@@ -10,6 +10,13 @@
       "args": [
         "--debug",
       ]
+    },
+    {
+      "name": "Python Debugger: bot.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "bot.py",
+      "console": "integratedTerminal",
     },
   ]
 }
