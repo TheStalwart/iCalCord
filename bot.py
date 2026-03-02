@@ -327,12 +327,12 @@ async def fetch_and_store_events_for_guild(guild_id):
     print(f"Fetching events for guild ID: [yellow]{guild_id}[/yellow]")
 
     # The bot doesn't need to be present on server to fetch events
-    # if the server is "lurkable"
+    # if the server is "Discoverable" (1000+ members) and events are "Public" (default setting).
     # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
-    lurkable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
-    log_events(lurkable_events_json, guild_id)
-    if lurkable_events_json is not None:
-        for event_json in lurkable_events_json:
+    discoverable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
+    log_events(discoverable_events_json, guild_id)
+    if discoverable_events_json is not None:
+        for event_json in discoverable_events_json:
             upsert_event(event_json)
         return
 
