@@ -105,6 +105,20 @@ def get_guild_info(guild_id):
     return None
 
 
+def log_events(events, guild_id):
+    print(f"Events for guild ID: [yellow]{guild_id}[/yellow]:")
+    if args.debug:
+        pprint(events)
+    else:
+        if len(events) == 0:
+            print("No events found")
+        for ev in events:
+            human_readable_datetime = datetime.fromisoformat(
+                ev["scheduled_start_time"]
+            ).strftime("%Y-%m-%d %H:%M:%S")
+            print(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
+
+
 def retrieve_memcached_current_events_for_guild(guild_id):
     url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events"
     memcache_key = memcache_key_for_guild_events(guild_id)
@@ -120,7 +134,6 @@ def retrieve_memcached_current_events_for_guild(guild_id):
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         response_json = response.json()
-        pprint(response_json)
         memcache_client.set(
             memcache_key, response_json, time=config["memcache"]["events_ttl_seconds"]
         )
@@ -317,6 +330,7 @@ async def fetch_and_store_events_for_guild(guild_id):
     # if the server is "lurkable"
     # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
     lurkable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
+    log_events(lurkable_events_json, guild_id)
     if lurkable_events_json is not None:
         for event_json in lurkable_events_json:
             upsert_event(event_json)
@@ -331,7 +345,7 @@ async def fetch_and_store_events_for_guild(guild_id):
         print(
             f"Using cached discord.py response for guild ID: [yellow]{guild_id}[/yellow]"
         )
-        pprint(cached_response)
+        log_events(cached_response, guild_id)
         return
 
     guild = discord_client.get_guild(guild_id)
@@ -345,14 +359,7 @@ async def fetch_and_store_events_for_guild(guild_id):
         print("No scheduled events found.")
     else:
         print(f"Found [green]{len(events)}[/green] scheduled events:")
-        pprint(events)
-        # for ev in events:
-        #     print(f"Event: {ev.name}")
-        #     print(f"  ID: {ev.id}")
-        #     print(f"  Start: {ev.start_time}")
-        #     print(f"  End:   {ev.end_time}")
-        #     print(f"  Description: {ev.description!r}")
-        #     print("-" * 40)
+        log_events(events, guild_id)
     memcache_client.set(
         memcache_key, events, time=config["memcache"]["value_ttl_seconds"]
     )
