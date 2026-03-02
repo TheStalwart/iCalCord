@@ -120,7 +120,7 @@ def log_events(events, guild_id):
 
 
 def retrieve_memcached_current_events_for_guild(guild_id):
-    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events"
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events?with_user_count=true"
     memcache_key = memcache_key_for_guild_events(guild_id)
 
     cached_response = memcache_client.get(memcache_key)
@@ -354,7 +354,7 @@ async def fetch_and_store_events_for_guild(guild_id):
             f"[red]Error:[/red] Guild [yellow]{guild_id}[/yellow] not found (bot not invited?)"
         )
         return
-    events = await guild.fetch_scheduled_events()
+    events = await guild.fetch_scheduled_events(with_counts=True)
     if not events:
         print("No scheduled events found.")
     else:
