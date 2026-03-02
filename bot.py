@@ -119,6 +119,26 @@ def log_events(events, guild_id):
             print(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
 
 
+def retrieve_subscribed_users_for_event(guild_id, event_id):
+    # This endpoint works for both Discoverable and Invite Only servers
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events/{event_id}/users"
+    headers = {"Authorization": f"Bot {config['discord']['token']}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        # This implementation will only retrieve the first 100 subscribed users.
+        # To retrieve more than 100 subscribed users,
+        # we need to implement pagination using the "after" query parameter.
+        # I cannot reproduce a scenario where an event has more than 100 subscribed users though.
+        # For example, Marvel Rivals server (1193841000108531764)
+        # has more than 4 million members but only 1-2 users subscribe to events.
+        return response.json()
+
+    print(
+        f"[red]Error:[/red] Failed to fetch subscribed users for event ID: [yellow]{event_id}[/yellow]: {response.content}"
+    )
+    return None
+
+
 def retrieve_memcached_current_events_for_guild(guild_id):
     url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events?with_user_count=true"
     memcache_key = memcache_key_for_guild_events(guild_id)
@@ -134,6 +154,14 @@ def retrieve_memcached_current_events_for_guild(guild_id):
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         response_json = response.json()
+
+        for event in response_json:
+            subscribed_users = retrieve_subscribed_users_for_event(
+                guild_id, event["id"]
+            )
+            if subscribed_users is not None:
+                event["subscribed_users"] = subscribed_users
+
         memcache_client.set(
             memcache_key, response_json, time=config["memcache"]["events_ttl_seconds"]
         )
@@ -149,6 +177,9 @@ def upsert_event(event_data: dict):
     # Fields that indicate a meaningful change to the event.
     # Discord API output includes fields that may change
     # but not impact ICS output, e.g. creator.accent_color.
+    #
+    # subscribed_users is not included in this list because it does not affect VEVENT values,
+    # and only used in custom feeds to filter events based on user ID.
     MEANINGFUL_FIELDS = [
         "name",
         "description",
@@ -359,6 +390,14 @@ async def fetch_and_store_events_for_guild(guild_id):
         print("No scheduled events found.")
     else:
         print(f"Found [green]{len(events)}[/green] scheduled events:")
+
+        for event in events:
+            subscribed_users = guild.user(
+                retrieve_subscribed_users_for_event(guild_id, event["id"])
+            )
+            if subscribed_users is not None:
+                event["subscribed_users"] = subscribed_users
+
         log_events(events, guild_id)
     memcache_client.set(
         memcache_key, events, time=config["memcache"]["value_ttl_seconds"]
