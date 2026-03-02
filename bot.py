@@ -409,9 +409,11 @@ async def fetch_and_store_events_for_guild(guild_id):
 
 @discord_client.event
 async def on_ready():
-    print(f"We have logged in as [yellow]{discord_client.user}[/yellow]")
+    print(f"Logged into Discord as [yellow]{discord_client.user}[/yellow]")
     await start_http_server()
-    print("Started HTTP Server")
+    print(
+        f"Started HTTP Server on {config['frontend']['ip']}:{config['frontend']['port']}"
+    )
 
 
 # TODO: implement a slash command to respond with .ics feed URL for the server, e.g. /icalcord
@@ -429,6 +431,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    if args.debug:
-        print(f"Discord Bot Token: [yellow]{config['discord']['token']}[/yellow]")
     asyncio.run(main())
