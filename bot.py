@@ -131,6 +131,8 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
         # I cannot reproduce a scenario where an event has more than 100 subscribed users though.
         # For example, Marvel Rivals server (1193841000108531764)
         # has more than 4 million members but only 1-2 users subscribe to events.
+        # World of Warcraft server (113103747126747136) has 150k members,
+        # but less than 40 subscribed to Midnight launch event.
         return response.json()
 
     print(
