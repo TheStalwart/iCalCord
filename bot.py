@@ -265,6 +265,9 @@ async def frontend_index(request):
 
 async def endpoint_handler_ics_feed_generator(request):
     guild_id = request.match_info["guild_id"]
+    print(
+        f"Received request for .ics feed for: [yellow]{guild_id}[/yellow] from [blue]{request.remote}[/blue]"
+    )
 
     # Basic validation to ensure guild_id is a plausible Discord Snowflake.
     if not guild_id.isdigit() or not (16 <= len(guild_id) <= 20):
