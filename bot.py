@@ -61,14 +61,18 @@ def memcache_key_for_guild_events(guild_id):
     return f"{config['memcache']['key_prefix']}_guild_events_{guild_id}"
 
 
-def retrieve_memcached_current_events_for_guild(guild_id):
-    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events"
-    memcache_key = memcache_key_for_guild_events(guild_id)
+def memcache_key_for_guild_info(guild_id):
+    return f"{config['memcache']['key_prefix']}_guild_info_{guild_id}"
+
+
+def get_guild_info(guild_id):
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/preview"
+    memcache_key = memcache_key_for_guild_info(guild_id)
 
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
         print(
-            f"Using cached response for lurkable guild ID: [yellow]{guild_id}[/yellow]"
+            f"Using cached response for info of guild ID: [yellow]{guild_id}[/yellow]"
         )
         return cached_response
 
@@ -78,12 +82,41 @@ def retrieve_memcached_current_events_for_guild(guild_id):
         response_json = response.json()
         pprint(response_json)
         memcache_client.set(
-            memcache_key, response_json, time=config["memcache"]["value_ttl_seconds"]
+            memcache_key,
+            response_json,
+            time=config["memcache"]["guild_info_ttl_seconds"],
         )
         return response_json
 
     print(
-        f"[red]Error:[/red] Failed to fetch Discord events for lurkable Guild [yellow]{guild_id}[/yellow]: {response.content}"
+        f"[red]Error:[/red] Failed to fetch Discord guild info for guild ID: [yellow]{guild_id}[/yellow]: {response.content}"
+    )
+    return None
+
+
+def retrieve_memcached_current_events_for_guild(guild_id):
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events"
+    memcache_key = memcache_key_for_guild_events(guild_id)
+
+    cached_response = memcache_client.get(memcache_key)
+    if cached_response:
+        print(
+            f"Using cached response for events of guild ID: [yellow]{guild_id}[/yellow]"
+        )
+        return cached_response
+
+    headers = {"Authorization": f"Bot {config['discord']['token']}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        response_json = response.json()
+        pprint(response_json)
+        memcache_client.set(
+            memcache_key, response_json, time=config["memcache"]["events_ttl_seconds"]
+        )
+        return response_json
+
+    print(
+        f"[red]Error:[/red] Failed to fetch Discord events for guild ID [yellow]{guild_id}[/yellow]: {response.content}"
     )
     return None
 
@@ -153,6 +186,7 @@ def upsert_event(event_data: dict):
 def generate_ics_feed(guild_id):
     print(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
     ics_path = os.path.join(FRONTEND_STATIC_PATH, f"{guild_id}.ics")
+    guild_info = get_guild_info(guild_id)
     events = mongo_collection.find({"guild_id": guild_id})
 
     # The icalendar library https://icalendar.readthedocs.io/en/stable/index.html
@@ -161,7 +195,7 @@ def generate_ics_feed(guild_id):
     ics = Calendar()
     ics.prodid = "-//icalcord.retromultiplayer.com//iCalCord//EN"
     ics.version = "2.0"
-    ics.calendar_name = f"Guild {guild_id} Events"
+    ics.calendar_name = f"{guild_info.get('name', guild_id)} Events"
     for event in events:
         ics_event = Event()
         ics_event.uid = f"{event['id']}@icalcord"
