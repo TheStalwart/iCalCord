@@ -65,6 +65,16 @@ def memcache_key_for_guild_info(guild_id):
     return f"{config['memcache']['key_prefix']}_guild_info_{guild_id}"
 
 
+def log_guild_info(guild_info):
+    if args.debug:
+        print(f"Guild Info for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]:")
+        pprint(guild_info)
+    else:
+        print(
+            f"Guild name for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]: [green]{guild_info.get('name', 'Unknown')}[/green]"
+        )
+
+
 def get_guild_info(guild_id):
     url = f"https://discord.com/api/v10/guilds/{guild_id}/preview"
     memcache_key = memcache_key_for_guild_info(guild_id)
@@ -74,13 +84,14 @@ def get_guild_info(guild_id):
         print(
             f"Using cached response for info of guild ID: [yellow]{guild_id}[/yellow]"
         )
+        log_guild_info(cached_response)
         return cached_response
 
     headers = {"Authorization": f"Bot {config['discord']['token']}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         response_json = response.json()
-        pprint(response_json)
+        log_guild_info(response_json)
         memcache_client.set(
             memcache_key,
             response_json,
