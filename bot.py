@@ -265,8 +265,10 @@ async def frontend_index(request):
 
 async def endpoint_handler_ics_feed_generator(request):
     guild_id = request.match_info["guild_id"]
+
+    client_ip = request.headers.get("X-Forwarded-For", request.remote)
     print(
-        f"Received request for .ics feed for: [yellow]{guild_id}[/yellow] from [blue]{request.remote}[/blue]"
+        f"Received request for .ics feed for: [yellow]{guild_id}[/yellow] from [blue]{client_ip}[/blue]"
     )
 
     # Basic validation to ensure guild_id is a plausible Discord Snowflake.
