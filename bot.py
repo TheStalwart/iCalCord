@@ -248,7 +248,14 @@ def upsert_event(event_data: dict):
 def generate_ics_feed(guild_id):
     print(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
     ics_path = os.path.join(FRONTEND_STATIC_PATH, f"{guild_id}.ics")
+
+    guild_name = f"{guild_id}"
     guild_info = get_guild_info(guild_id)
+    if guild_info:
+        guild_name = guild_info.get("name", guild_id)
+    else:
+        print(f"[red]Warning:[/red] guild_info missing when generating ICS feed")
+
     events = mongo_collection.find({"guild_id": guild_id})
 
     # The icalendar library https://icalendar.readthedocs.io/en/stable/index.html
@@ -257,7 +264,8 @@ def generate_ics_feed(guild_id):
     ics = Calendar()
     ics.prodid = "-//icalcord.retromultiplayer.com//iCalCord//EN"
     ics.version = "2.0"
-    ics.calendar_name = f"{guild_info.get('name', guild_id)} Events"
+    ics.calendar_name = f"{guild_name} Events"
+
     for event in events:
         ics_event = Event()
         ics_event.uid = f"{event['id']}@icalcord"
