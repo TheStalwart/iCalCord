@@ -263,7 +263,7 @@ def generate_ics_feed(guild_id):
     if guild_info:
         guild_name = guild_info.get("name", guild_id)
     else:
-        print(f"[red]Warning:[/red] guild_info missing when generating ICS feed")
+        print("[red]Warning:[/red] guild_info missing when generating ICS feed")
 
     events = mongo_collection.find({"guild_id": guild_id})
 
@@ -375,10 +375,10 @@ async def endpoint_handler_suggested_feeds(request):
     memcache_key = memcache_key_for_suggested_feeds()
     cached_output = memcache_client.get(memcache_key)
     if cached_output is not None:
-        print(f"Responding with cached suggested feeds")
+        print("Responding with cached suggested feeds")
         return web.json_response(cached_output)
 
-    print(f"Generating fresh suggested feeds")
+    print("Generating fresh suggested feeds")
 
     one_month_ago = datetime.now(timezone.utc) - timedelta(days=30)
 
