@@ -12,6 +12,7 @@ memcache:
 
 discord:
   token: "OTM1NTY2MjUwNTg1NzYzODgw.YIz98g.ffPyQbZQGxQ3tmunQx2i86AWT-M"
+  http_request_timeout_seconds: 10
 
 frontend:
   ip: 127.0.0.1

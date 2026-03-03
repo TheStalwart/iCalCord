@@ -98,10 +98,24 @@ def log_guild_info(guild_info):
         )
 
 
-def get_guild_info(guild_id):
-    url = f"https://discord.com/api/v10/guilds/{guild_id}/preview"
-    memcache_key = memcache_key_for_guild_info(guild_id)
+def discord_api_http_request(url):
+    # discord.py internal architecture collides with the fact
+    # Discoverable guilds allow fetching scheduled event data
+    # without the bot being present on the server.
+    # https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
+    #
+    # So this API call:
+    # `discord_client.http.get_scheduled_events(guild_id, with_user_count=True)`
+    # stalls for MULTIPLE SECONDS,
+    # and it's MUCH FASTER to bypass discord.py entirely
+    headers = {"Authorization": f"Bot {config['discord']['token']}"}
+    return requests.get(
+        url, headers=headers, timeout=config["discord"]["http_request_timeout_seconds"]
+    )
 
+
+def get_guild_info(guild_id):
+    memcache_key = memcache_key_for_guild_info(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
         print(
@@ -110,9 +124,9 @@ def get_guild_info(guild_id):
         log_guild_info(cached_response)
         return cached_response
 
-    headers = {"Authorization": f"Bot {config['discord']['token']}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/preview"
+    response = discord_api_http_request(url)
+    if response.status_code == requests.codes.ok:  # 200
         response_json = response.json()
         log_guild_info(response_json)
         memcache_client.set(
@@ -145,9 +159,8 @@ def log_events(events, guild_id):
 def retrieve_subscribed_users_for_event(guild_id, event_id):
     # This endpoint works for both Discoverable and Invite Only servers
     url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events/{event_id}/users"
-    headers = {"Authorization": f"Bot {config['discord']['token']}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
+    response = discord_api_http_request(url)
+    if response.status_code == requests.codes.ok:  # 200
         # This implementation will only retrieve the first 100 subscribed users.
         # To retrieve more than 100 subscribed users,
         # we need to implement pagination using the "after" query parameter.
@@ -165,9 +178,7 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
 
 
 def retrieve_memcached_current_events_for_guild(guild_id):
-    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events?with_user_count=true"
     memcache_key = memcache_key_for_guild_events(guild_id)
-
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
         print(
@@ -175,9 +186,9 @@ def retrieve_memcached_current_events_for_guild(guild_id):
         )
         return cached_response
 
-    headers = {"Authorization": f"Bot {config['discord']['token']}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events?with_user_count=true"
+    response = discord_api_http_request(url)
+    if response.status_code == requests.codes.ok:  # 200
         response_json = response.json()
 
         for event in response_json:
