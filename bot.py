@@ -5,11 +5,11 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from rich import print
 from rich.pretty import pprint
+from pathlib import Path
 import argparse
 import asyncio
 import discord
 import memcache
-import os
 import pathlib
 import requests
 import sys
@@ -18,9 +18,9 @@ import yaml
 
 # Define file paths
 PROJECT_ROOT = pathlib.Path(__file__).parent.resolve()
-CONFIG_FILE_PATH = os.path.join(PROJECT_ROOT, "config.yaml")
-FRONTEND_ROOT_PATH = os.path.join(PROJECT_ROOT, "frontend")
-FRONTEND_STATIC_PATH = os.path.join(FRONTEND_ROOT_PATH, "static")
+CONFIG_FILE_PATH = Path(PROJECT_ROOT) / "config.yaml"
+FRONTEND_ROOT_PATH = Path(PROJECT_ROOT) / "frontend"
+FRONTEND_STATIC_PATH = Path(FRONTEND_ROOT_PATH) / "static"
 
 
 # Guild Scheduled Event Object Fields that indicate a meaningful change to the event.
@@ -256,7 +256,7 @@ def upsert_event(event_data: dict):
 
 def generate_ics_feed(guild_id):
     print(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
-    ics_path = os.path.join(FRONTEND_STATIC_PATH, f"{guild_id}.ics")
+    ics_path = Path(FRONTEND_STATIC_PATH) / f"{guild_id}.ics"
 
     guild_name = f"{guild_id}"
     guild_info = get_guild_info(guild_id)
@@ -355,7 +355,7 @@ def log_http_request(request):
 async def frontend_index(request):
     log_http_request(request)
 
-    return web.FileResponse(os.path.join(FRONTEND_ROOT_PATH, "index.html"))
+    return web.FileResponse(Path(FRONTEND_ROOT_PATH) / "index.html")
 
 
 async def endpoint_handler_ics_feed_generator(request):
