@@ -334,17 +334,25 @@ discord_intents = discord.Intents.default()
 discord_client = discord.Client(intents=discord_intents)
 
 
+def log_http_request(request):
+    # Production instance runs behind reverse proxy,
+    # so request.remote returns 127.0.0.1 there.
+    # X-Forwarded-For header is set to actual client IP by proxy.
+    client_ip = request.headers.get("X-Forwarded-For", request.remote)
+
+    print(f"[blue]{client_ip}[/blue] HTTP requested: [green]{request.rel_url}[/green]")
+
+
 async def frontend_index(request):
+    log_http_request(request)
+
     return web.FileResponse(os.path.join(FRONTEND_ROOT_PATH, "index.html"))
 
 
 async def endpoint_handler_ics_feed_generator(request):
-    guild_id = request.match_info["guild_id"]
+    log_http_request(request)
 
-    client_ip = request.headers.get("X-Forwarded-For", request.remote)
-    print(
-        f"Received request for .ics feed for: [yellow]{guild_id}[/yellow] from [blue]{client_ip}[/blue]"
-    )
+    guild_id = request.match_info["guild_id"]
 
     # Basic validation to ensure guild_id is a plausible Discord Snowflake.
     if not guild_id.isdigit() or not (16 <= len(guild_id) <= 20):
