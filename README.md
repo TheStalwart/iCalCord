@@ -22,3 +22,7 @@ Open the `devcontainer.json` and follow instructions in comments.
 1. Create a MongoDB database with a collection "events"
 1. Run memcached instance
 1. Copy `config.yaml.example` to `config.yaml` and fill in values.
+
+## Requirements
+
+- Python 3.9
