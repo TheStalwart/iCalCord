@@ -53,7 +53,7 @@ args = arg_parser.parse_args()
 
 
 config = {}
-with open(CONFIG_FILE_PATH) as stream:
+with CONFIG_FILE_PATH.open() as stream:
     try:
         config = yaml.safe_load(stream)
     except yaml.YAMLError as exc:
@@ -328,7 +328,7 @@ def generate_ics_feed(guild_id):
     ics_feed = ics.to_ical()
 
     if args.debug:
-        with open(ics_path, "wb") as ics_file:
+        with ics_path.open("wb") as ics_file:
             ics_file.write(ics_feed)
             print(f"Saved static [green]{ics_path}[/green] file")
 
