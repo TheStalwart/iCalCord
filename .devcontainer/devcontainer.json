@@ -21,6 +21,7 @@
     "vscode": {
       "extensions": [
         "af4jm.vscode-icalendar",
+        "charliermarsh.ruff",
         "DavidAnson.vscode-markdownlint",
         "eamodio.gitlens",
         "ms-python.black-formatter"

@@ -6,6 +6,10 @@
     "LICENSE": "plaintext",
     "*.yaml.example": "yaml",
   },
+  "ruff.enable": true,
+  "ruff.lint.select": [
+    "ALL"
+  ],
   "[jsonc]": {
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
