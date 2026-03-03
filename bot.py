@@ -1,5 +1,5 @@
 from aiohttp import web
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from icalendar import Calendar, Event, FreeBusy
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
@@ -21,6 +21,25 @@ PROJECT_ROOT = pathlib.Path(__file__).parent.resolve()
 CONFIG_FILE_PATH = os.path.join(PROJECT_ROOT, "config.yaml")
 FRONTEND_ROOT_PATH = os.path.join(PROJECT_ROOT, "frontend")
 FRONTEND_STATIC_PATH = os.path.join(FRONTEND_ROOT_PATH, "static")
+
+
+# Guild Scheduled Event Object Fields that indicate a meaningful change to the event.
+#
+# Discord API output includes fields that may change
+# but not impact ICS output, e.g. creator.accent_color.
+#
+# "subscribed_users" is not included in this list
+# because it does not affect VEVENT values,
+# and is only used in custom feeds to filter events based on user ID.
+#
+# https://docs.discord.com/developers/resources/guild-scheduled-event
+MEANINGFUL_FIELDS = [
+    "name",
+    "description",
+    "scheduled_start_time",
+    "scheduled_end_time",
+    "entity_metadata",  # .location
+]
 
 
 # Build ArgumentParser https://docs.python.org/3/library/argparse.html
@@ -63,6 +82,10 @@ def memcache_key_for_guild_events(guild_id):
 
 def memcache_key_for_guild_info(guild_id):
     return f"{config['memcache']['key_prefix']}_guild_info_{guild_id}"
+
+
+def memcache_key_for_suggested_feeds():
+    return f"{config['memcache']['key_prefix']}_suggested_feeds"
 
 
 def log_guild_info(guild_info):
@@ -176,20 +199,6 @@ def retrieve_memcached_current_events_for_guild(guild_id):
 
 
 def upsert_event(event_data: dict):
-    # Fields that indicate a meaningful change to the event.
-    # Discord API output includes fields that may change
-    # but not impact ICS output, e.g. creator.accent_color.
-    #
-    # subscribed_users is not included in this list because it does not affect VEVENT values,
-    # and only used in custom feeds to filter events based on user ID.
-    MEANINGFUL_FIELDS = [
-        "name",
-        "description",
-        "scheduled_start_time",
-        "scheduled_end_time",
-        "entity_metadata",  # .location
-    ]
-
     try:
         existing = mongo_collection.find_one({"id": event_data["id"]})
 
@@ -363,11 +372,70 @@ async def endpoint_handler_ics_feed_generator(request):
     return web.Response(body=ics_feed, content_type="text/calendar", charset="utf-8")
 
 
+async def endpoint_handler_suggested_feeds(request):
+    log_http_request(request)
+
+    memcache_key = memcache_key_for_suggested_feeds()
+    cached_output = memcache_client.get(memcache_key)
+    if cached_output is not None:
+        print(f"Responding with cached suggested feeds")
+        return web.json_response(cached_output)
+
+    print(f"Generating fresh suggested feeds")
+
+    one_month_ago = datetime.now(timezone.utc) - timedelta(days=30)
+
+    query_filter = {
+        # don't suggest servers that have no recent events,
+        # that would result in empty feeds
+        "icalcord_scheduled_start_time": {"$gte": one_month_ago}
+    }
+
+    query_projection = {field: 1 for field in MEANINGFUL_FIELDS} | {
+        "guild_id": 1,
+        "_id": 0,  # exclude _id because type ObjectId is not JSON serializable
+    }
+
+    recent_events = list(mongo_collection.find(query_filter, query_projection))
+
+    unique_guild_ids = list(set(map(lambda ev: ev["guild_id"], recent_events)))
+
+    def format_guild_info(guild_id):
+        guild_info = get_guild_info(guild_id)
+        guild_info_keys = ["id", "name"]
+        guild_info_trimmed = {k: guild_info[k] for k in guild_info_keys}
+
+        guild_events = filter(lambda ev: ev["guild_id"] == guild_id, recent_events)
+        guild_info_trimmed["scheduled_events"] = list(guild_events)
+
+        return guild_info_trimmed
+
+    guild_info = map(format_guild_info, unique_guild_ids)
+
+    output = list(guild_info)
+
+    # I could implement a more sophisticated value generation here, but:
+    # - i want to shift processing to client machines as much as possible
+    # - this process doesn't know external root URL, unlike JavaScript on the frontend
+
+    memcache_client.set(
+        memcache_key,
+        output,
+        time=config["memcache"]["suggested_feeds_ttl_seconds"],
+    )
+
+    return web.json_response(output)
+
+
 async def start_http_server():
     app = web.Application()
 
-    # API endpoint
+    # Generate a feed for a specific Guild ID
     app.router.add_get("/feed/{guild_id}.ics", endpoint_handler_ics_feed_generator)
+
+    # Query MongoDB for recent events,
+    # for frontend to suggest feeds to subscribe to.
+    app.router.add_get("/suggested.json", endpoint_handler_suggested_feeds)
 
     # Root index.html
     app.router.add_get("/", frontend_index)

@@ -8,6 +8,7 @@ memcache:
   key_prefix: "icalcord"
   guild_info_ttl_seconds: 3600  # 60 minutes
   events_ttl_seconds: 600  # 10 minutes
+  suggested_feeds_ttl_seconds: 3600  # 60 minutes
 
 discord:
   token: "OTM1NTY2MjUwNTg1NzYzODgw.YIz98g.ffPyQbZQGxQ3tmunQx2i86AWT-M"
