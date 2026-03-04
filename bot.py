@@ -8,6 +8,7 @@ from pathlib import Path
 import discord
 import memcache
 import requests
+import sentry_sdk
 import yaml
 from aiohttp import web
 from icalendar import Calendar, Event, FreeBusy
@@ -64,6 +65,22 @@ with CONFIG_FILE_PATH.open() as stream:
         rprint(exc)
         sys.exit(1)
 
+# Initialize Sentry SDK
+try:
+    sentry_sdk.init(
+        dsn=config["sentry"]["dsn"],
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for tracing.
+        traces_sample_rate=1.0,
+        # Set profiles_sample_rate to 1.0 to profile 100%
+        # of sampled transactions.
+        # We recommend adjusting this value in production.
+        profiles_sample_rate=1.0,
+    )
+except (KeyError, sentry_sdk.utils.BadDsn) as exc:
+    if not args.debug:
+        rprint("[red]Warning:[/red] Sentry initialization failed!")
+        pprint(exc)
 
 # Create MongoDB connection
 mongo_client = MongoClient(config["mongodb"]["url"], retryWrites=True)
