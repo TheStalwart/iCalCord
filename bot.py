@@ -408,7 +408,7 @@ def generate_ics_feed(guild_id):
 
 
 # Set up Discord API client
-discord_intents = discord.Intents.default()
+discord_intents = discord.Intents(guilds=True, guild_scheduled_events=True)
 discord_client = discord.Client(intents=discord_intents)
 
 
