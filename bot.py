@@ -154,6 +154,9 @@ def discord_api_http_request(url):
 # https://medium.com/netcord/discord-snowflake-explained-id-generation-process-a468be00a570
 # https://discordutils.com/snowflake-decoder
 def is_valid_discord_snowflake(snowflake):
+    if snowflake is None:
+        return False
+
     min_length = 16  # realistically, 17 should be the shortest ever
     max_length = 20  # expected maximum length of a 64bit integer
     return snowflake.isdigit() and (min_length <= len(snowflake) <= max_length)
