@@ -537,7 +537,9 @@ async def on_ready():
     )
 
 
-# TODO: implement a slash command to respond with .ics feed URL for the server, e.g. /icalcord
+# TODO: implement a slash command (e.g. /icalcord) to respond with
+# .ics feed URL for the server
+# and personalized .ics with events user marked as "interested"
 @discord_client.event
 async def on_message(message):
     if message.author == discord_client.user:
