@@ -4,6 +4,5 @@
     "charliermarsh.ruff",
     "DavidAnson.vscode-markdownlint",
     "eamodio.gitlens",
-    "ms-python.black-formatter",
   ]
 }
