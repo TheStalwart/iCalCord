@@ -65,22 +65,37 @@ with CONFIG_FILE_PATH.open() as stream:
         rprint(exc)
         sys.exit(1)
 
-# Initialize Sentry SDK
-try:
-    sentry_sdk.init(
-        dsn=config["sentry"]["dsn"],
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for tracing.
-        traces_sample_rate=1.0,
-        # Set profiles_sample_rate to 1.0 to profile 100%
-        # of sampled transactions.
-        # We recommend adjusting this value in production.
-        profiles_sample_rate=1.0,
-    )
-except (KeyError, sentry_sdk.utils.BadDsn) as exc:
-    if not args.debug:
-        rprint("[red]Warning:[/red] Sentry initialization failed!")
-        pprint(exc)
+
+# Initialize Sentry SDK.
+# Silently ignore failure when debugging.
+def initialize_sentry_sdk():
+    sentry_config = config.get("sentry")
+
+    if args.debug and not sentry_config:
+        return
+
+    sentry_dsn = sentry_config.get("dsn")
+
+    if args.debug and not sentry_dsn:
+        return
+
+    try:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            # Set traces_sample_rate to 1.0 to capture 100%
+            # of transactions for tracing.
+            traces_sample_rate=1.0,
+            # Set profiles_sample_rate to 1.0 to profile 100%
+            # of sampled transactions.
+            # We recommend adjusting this value in production.
+            profiles_sample_rate=1.0,
+        )
+    except sentry_sdk.utils.BadDsn as exc:
+        if not args.debug:
+            log_sentry_init_failure(exc)
+
+
+initialize_sentry_sdk()
 
 # Create MongoDB connection
 mongo_client = MongoClient(config["mongodb"]["url"], retryWrites=True)
@@ -171,6 +186,11 @@ def get_guild_info(guild_id):
         f" for guild ID: [yellow]{guild_id}[/yellow]: {response.content}",
     )
     return None
+
+
+def log_sentry_init_failure(error):
+    rprint("[red]Warning:[/red] Sentry initialization failed!")
+    pprint(error)
 
 
 def log_events(events, guild_id):
