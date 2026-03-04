@@ -160,6 +160,13 @@ def is_valid_discord_snowflake(snowflake):
 
 
 def get_guild_info(guild_id):
+    # discord.py keeps cached values for guilds the bot is invited to.
+    # get_* functions shouldn't make any API requests when called,
+    # values are being updated by receiving on_guild_update event via WebSocket
+    client_cached_info = discord_client.get_guild(int(guild_id))
+    if client_cached_info and client_cached_info.name:
+        return {"id": guild_id, "name": client_cached_info.name}
+
     memcache_key = memcache_key_for_guild_info(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
