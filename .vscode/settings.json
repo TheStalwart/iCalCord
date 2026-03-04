@@ -14,7 +14,6 @@
     "E501", // line too long
     "ANN", // type annotations
     "D", // docstrings
-    "COM812" // trailing comma missing
   ],
   "[jsonc]": {
     "editor.formatOnSave": true,
