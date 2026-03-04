@@ -396,7 +396,10 @@ async def endpoint_handler_ics_feed_generator(request):
     guild_id = request.match_info["guild_id"]
 
     if not is_valid_discord_snowflake(guild_id):
-        return web.json_response({"error": "Invalid guild_id format"}, status=400)
+        return web.json_response(
+            {"error": "Invalid Guild ID", "code": requests.codes.bad_request},
+            status=requests.codes.bad_request,
+        )
 
     await fetch_and_store_events_for_guild(guild_id)
     ics_feed = generate_ics_feed(guild_id)
