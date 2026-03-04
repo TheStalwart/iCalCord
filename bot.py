@@ -47,7 +47,7 @@ arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument(
     "--debug",
     action="store_true",
-    help="Print extra values, including Discord Bot Token, and generate static .ics files",
+    help="Print extra values and generate static .ics files",
 )
 args = arg_parser.parse_args()
 
