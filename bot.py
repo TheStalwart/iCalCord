@@ -114,6 +114,16 @@ def discord_api_http_request(url):
     )
 
 
+# Basic validation of a Discord Snowflake.
+# https://docs.discord.com/developers/reference#snowflakes
+# https://medium.com/netcord/discord-snowflake-explained-id-generation-process-a468be00a570
+# https://discordutils.com/snowflake-decoder
+def is_valid_discord_snowflake(snowflake):
+    min_length = 16  # realistically, 17 should be the shortest ever
+    max_length = 20  # expected maximum length of a 64bit integer
+    return snowflake.isdigit() and (min_length <= len(snowflake) <= max_length)
+
+
 def get_guild_info(guild_id):
     memcache_key = memcache_key_for_guild_info(guild_id)
     cached_response = memcache_client.get(memcache_key)
@@ -371,8 +381,7 @@ async def endpoint_handler_ics_feed_generator(request):
 
     guild_id = request.match_info["guild_id"]
 
-    # Basic validation to ensure guild_id is a plausible Discord Snowflake.
-    if not guild_id.isdigit() or not (16 <= len(guild_id) <= 20):
+    if not is_valid_discord_snowflake(guild_id):
         return web.json_response({"error": "Invalid guild_id format"}, status=400)
 
     await fetch_and_store_events_for_guild(guild_id)
