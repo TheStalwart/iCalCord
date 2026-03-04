@@ -90,13 +90,12 @@ def memcache_key_for_suggested_feeds():
 
 
 def log_guild_info(guild_info):
-    if args.debug:
-        rprint(f"Guild Info for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]:")
-        pprint(guild_info)
-    else:
-        rprint(
-            f"Guild name for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]: [green]{guild_info.get('name', 'Unknown')}[/green]",
-        )
+    guild_id = guild_info.get("id", "Unknown")
+    guild_name = guild_info.get("name", "Unknown")
+
+    rprint(
+        f"Guild name for [yellow]{guild_id}[/yellow]: [green]{guild_name}[/green]",
+    )
 
 
 def discord_api_http_request(url):
