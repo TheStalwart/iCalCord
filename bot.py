@@ -444,6 +444,15 @@ async def endpoint_handler_suggested_feeds(request):
 
         return guild_info_trimmed
 
+    # This line hits Discord API rate limiter.
+    # The easy and obvious solution would be to bump up memcache TTL,
+    # but it might still hit the limiter due to lack of staggering.
+    # Currently, it's _very_ likely for all guild_info caches to be expired
+    # when calling this endpoint.
+    # The hard solution would be to implement
+    # a leaky bucket rate limiter for all Discord API calls
+    # and/or reuse old caches when close to the limit,
+    # and refresh the oldest caches when there's enough capacity.
     guild_info = map(format_guild_info, unique_guild_ids)
 
     output = list(guild_info)
