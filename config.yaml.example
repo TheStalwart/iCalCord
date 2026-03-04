@@ -6,7 +6,7 @@ mongodb:
 memcache:
   url: "localhost:11211"
   key_prefix: "icalcord"
-  guild_info_ttl_seconds: 3600  # 60 minutes
+  guild_info_ttl_seconds: 86400  # 24 hours
   events_ttl_seconds: 600  # 10 minutes
   suggested_feeds_ttl_seconds: 3600  # 60 minutes
 
