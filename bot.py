@@ -485,6 +485,7 @@ async def fetch_and_store_events_for_guild(guild_id):
             upsert_event(event_json)
         return
 
+    # Is this fallback even necessary?
     rprint(
         f"Attempting to fetch events using discord.py library for guild ID: [yellow]{guild_id}[/yellow]",
     )
