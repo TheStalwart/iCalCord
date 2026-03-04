@@ -1,20 +1,20 @@
+import argparse
+import asyncio
+import pathlib
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import discord
+import memcache
+import requests
+import yaml
 from aiohttp import web
-from datetime import datetime, timezone, timedelta
 from icalendar import Calendar, Event, FreeBusy
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from rich import print
 from rich.pretty import pprint
-from pathlib import Path
-import argparse
-import asyncio
-import discord
-import memcache
-import pathlib
-import requests
-import sys
-import yaml
-
 
 # Define file paths
 PROJECT_ROOT = pathlib.Path(__file__).parent.resolve()
