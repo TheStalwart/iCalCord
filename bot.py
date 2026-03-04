@@ -13,7 +13,7 @@ from aiohttp import web
 from icalendar import Calendar, Event, FreeBusy
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from rich import print
+from rich import print as rprint
 from rich.pretty import pprint
 
 # Define file paths
@@ -57,10 +57,10 @@ with CONFIG_FILE_PATH.open() as stream:
     try:
         config = yaml.safe_load(stream)
     except yaml.YAMLError as exc:
-        print(
+        rprint(
             f"[red]Error:[/red] Could not read config file at [yellow]{CONFIG_FILE_PATH}[/yellow]!"
         )
-        print(exc)
+        rprint(exc)
         sys.exit(1)
 
 
@@ -90,10 +90,10 @@ def memcache_key_for_suggested_feeds():
 
 def log_guild_info(guild_info):
     if args.debug:
-        print(f"Guild Info for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]:")
+        rprint(f"Guild Info for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]:")
         pprint(guild_info)
     else:
-        print(
+        rprint(
             f"Guild name for [yellow]{guild_info.get('id', 'Unknown')}[/yellow]: [green]{guild_info.get('name', 'Unknown')}[/green]"
         )
 
@@ -128,7 +128,7 @@ def get_guild_info(guild_id):
     memcache_key = memcache_key_for_guild_info(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
-        print(
+        rprint(
             f"Using cached response for info of guild ID: [yellow]{guild_id}[/yellow]"
         )
         log_guild_info(cached_response)
@@ -146,24 +146,24 @@ def get_guild_info(guild_id):
         )
         return response_json
 
-    print(
+    rprint(
         f"[red]Error:[/red] Failed to fetch Discord guild info for guild ID: [yellow]{guild_id}[/yellow]: {response.content}"
     )
     return None
 
 
 def log_events(events, guild_id):
-    print(f"Events for guild ID: [yellow]{guild_id}[/yellow]:")
+    rprint(f"Events for guild ID: [yellow]{guild_id}[/yellow]:")
     if args.debug:
         pprint(events)
     else:
         if len(events) == 0:
-            print("No events found")
+            rprint("No events found")
         for ev in events:
             human_readable_datetime = datetime.fromisoformat(
                 ev["scheduled_start_time"]
             ).strftime("%Y-%m-%d %H:%M:%S")
-            print(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
+            rprint(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
 
 
 def retrieve_subscribed_users_for_event(guild_id, event_id):
@@ -181,7 +181,7 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
         # but less than 40 subscribed to Midnight launch event.
         return response.json()
 
-    print(
+    rprint(
         f"[red]Error:[/red] Failed to fetch subscribed users for event ID: [yellow]{event_id}[/yellow]: {response.content}"
     )
     return None
@@ -191,7 +191,7 @@ def retrieve_memcached_current_events_for_guild(guild_id):
     memcache_key = memcache_key_for_guild_events(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
-        print(
+        rprint(
             f"Using cached response for events of guild ID: [yellow]{guild_id}[/yellow]"
         )
         return cached_response
@@ -213,7 +213,7 @@ def retrieve_memcached_current_events_for_guild(guild_id):
         )
         return response_json
 
-    print(
+    rprint(
         f"[red]Error:[/red] Failed to fetch Discord events for guild ID [yellow]{guild_id}[/yellow]: {response.content}"
     )
     return None
@@ -250,7 +250,7 @@ def upsert_event(event_data: dict):
 
         # Only set updated time if something meaningful changed
         if data_changed:
-            print(
+            rprint(
                 f"Meaningful update for event [magenta]{event_data['name']}[/magenta]"
             )
             event_update["$set"]["icalcord_updated_time"] = datetime.now(timezone.utc)
@@ -262,21 +262,21 @@ def upsert_event(event_data: dict):
         )
 
         if result.upserted_id:
-            print(
+            rprint(
                 f"Inserted new event with _id: [yellow]{result.upserted_id}[/yellow] ([magenta]{event_data['name']}[/magenta])"
             )
         elif result.modified_count:
-            print(f"Updated existing event ([magenta]{event_data['name']}[/magenta])")
+            rprint(f"Updated existing event ([magenta]{event_data['name']}[/magenta])")
         else:
-            print("No changes needed")
+            rprint("No changes needed")
 
     except PyMongoError as e:
-        print("[red]Database error:[/red]", e)
+        rprint("[red]Database error:[/red]", e)
         raise
 
 
 def generate_ics_feed(guild_id):
-    print(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
+    rprint(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
     ics_path = Path(FRONTEND_STATIC_PATH) / f"{guild_id}.ics"
 
     guild_name = f"{guild_id}"
@@ -284,7 +284,7 @@ def generate_ics_feed(guild_id):
     if guild_info:
         guild_name = guild_info.get("name", guild_id)
     else:
-        print("[red]Warning:[/red] guild_info missing when generating ICS feed")
+        rprint("[red]Warning:[/red] guild_info missing when generating ICS feed")
 
     events = mongo_collection.find({"guild_id": guild_id})
 
@@ -330,7 +330,7 @@ def generate_ics_feed(guild_id):
         ics.add_component(ics_event)
 
     if events.retrieved == 0:
-        print(
+        rprint(
             f"No events found for guild ID: [yellow]{guild_id}[/yellow], inserting VFREEBUSY component for spec compliance"
         )
         # Insert a VFREEBUSY component for spec compliance
@@ -351,7 +351,7 @@ def generate_ics_feed(guild_id):
     if args.debug:
         with ics_path.open("wb") as ics_file:
             ics_file.write(ics_feed)
-            print(f"Saved static [green]{ics_path}[/green] file")
+            rprint(f"Saved static [green]{ics_path}[/green] file")
 
     return ics_feed
 
@@ -367,7 +367,7 @@ def log_http_request(request):
     # X-Forwarded-For header is set to actual client IP by proxy.
     client_ip = request.headers.get("X-Forwarded-For", request.remote)
 
-    print(f"[blue]{client_ip}[/blue] HTTP requested: [green]{request.rel_url}[/green]")
+    rprint(f"[blue]{client_ip}[/blue] HTTP requested: [green]{request.rel_url}[/green]")
 
 
 async def frontend_index(request):
@@ -395,10 +395,10 @@ async def endpoint_handler_suggested_feeds(request):
     memcache_key = memcache_key_for_suggested_feeds()
     cached_output = memcache_client.get(memcache_key)
     if cached_output is not None:
-        print("Responding with cached suggested feeds")
+        rprint("Responding with cached suggested feeds")
         return web.json_response(cached_output)
 
-    print("Generating fresh suggested feeds")
+    rprint("Generating fresh suggested feeds")
 
     one_month_ago = datetime.now(timezone.utc) - timedelta(days=30)
 
@@ -468,7 +468,7 @@ async def start_http_server():
 
 
 async def fetch_and_store_events_for_guild(guild_id):
-    print(f"Fetching events for guild ID: [yellow]{guild_id}[/yellow]")
+    rprint(f"Fetching events for guild ID: [yellow]{guild_id}[/yellow]")
 
     # The bot doesn't need to be present on server to fetch events
     # if the server is "Discoverable" (1000+ members) and events are "Public" (default setting).
@@ -480,13 +480,13 @@ async def fetch_and_store_events_for_guild(guild_id):
             upsert_event(event_json)
         return
 
-    print(
+    rprint(
         f"Attempting to fetch events using discord.py library for guild ID: [yellow]{guild_id}[/yellow]"
     )
     memcache_key = memcache_key_for_guild_events(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response is not None:
-        print(
+        rprint(
             f"Using cached discord.py response for guild ID: [yellow]{guild_id}[/yellow]"
         )
         log_events(cached_response, guild_id)
@@ -494,15 +494,15 @@ async def fetch_and_store_events_for_guild(guild_id):
 
     guild = discord_client.get_guild(guild_id)
     if guild is None:
-        print(
+        rprint(
             f"[red]Error:[/red] Guild [yellow]{guild_id}[/yellow] not found (bot not invited?)"
         )
         return
     events = await guild.fetch_scheduled_events(with_counts=True)
     if not events:
-        print("No scheduled events found.")
+        rprint("No scheduled events found.")
     else:
-        print(f"Found [green]{len(events)}[/green] scheduled events:")
+        rprint(f"Found [green]{len(events)}[/green] scheduled events:")
 
         for event in events:
             subscribed_users = guild.user(
@@ -522,9 +522,9 @@ async def fetch_and_store_events_for_guild(guild_id):
 
 @discord_client.event
 async def on_ready():
-    print(f"Logged into Discord as [yellow]{discord_client.user}[/yellow]")
+    rprint(f"Logged into Discord as [yellow]{discord_client.user}[/yellow]")
     await start_http_server()
-    print(
+    rprint(
         f"Started HTTP Server on {config['frontend']['ip']}:{config['frontend']['port']}"
     )
 
