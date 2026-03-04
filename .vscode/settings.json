@@ -11,7 +11,6 @@
     "ALL"
   ],
   "ruff.lint.ignore": [
-    "E501", // line too long
     "ANN", // type annotations
     "D", // docstrings
     "TD", // TODO

@@ -58,7 +58,8 @@ with CONFIG_FILE_PATH.open() as stream:
         config = yaml.safe_load(stream)
     except yaml.YAMLError as exc:
         rprint(
-            f"[red]Error:[/red] Could not read config file at [yellow]{CONFIG_FILE_PATH}[/yellow]!",
+            f"[red]Error:[/red] Could not read config file"
+            f" at [yellow]{CONFIG_FILE_PATH}[/yellow]!",
         )
         rprint(exc)
         sys.exit(1)
@@ -149,7 +150,8 @@ def get_guild_info(guild_id):
         return response_json
 
     rprint(
-        f"[red]Error:[/red] Failed to fetch Discord guild info for guild ID: [yellow]{guild_id}[/yellow]: {response.content}",
+        f"[red]Error:[/red] Failed to fetch Discord guild info"
+        f" for guild ID: [yellow]{guild_id}[/yellow]: {response.content}",
     )
     return None
 
@@ -176,7 +178,8 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
         # This implementation will only retrieve the first 100 subscribed users.
         # To retrieve more than 100 subscribed users,
         # we need to implement pagination using the "after" query parameter.
-        # I cannot reproduce a scenario where an event has more than 100 subscribed users though.
+        # I cannot reproduce a scenario
+        # where an event has more than 100 subscribed users though.
         # For example, Marvel Rivals server (1193841000108531764)
         # has more than 4 million members but only 1-2 users subscribe to events.
         # World of Warcraft server (113103747126747136) has 150k members,
@@ -184,7 +187,8 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
         return response.json()
 
     rprint(
-        f"[red]Error:[/red] Failed to fetch subscribed users for event ID: [yellow]{event_id}[/yellow]: {response.content}",
+        f"[red]Error:[/red] Failed to fetch subscribed users"
+        f" for event ID: [yellow]{event_id}[/yellow]: {response.content}",
     )
     return None
 
@@ -194,7 +198,8 @@ def retrieve_memcached_current_events_for_guild(guild_id):
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
         rprint(
-            f"Using cached response for events of guild ID: [yellow]{guild_id}[/yellow]",
+            f"Using cached response"
+            f" for events of guild ID: [yellow]{guild_id}[/yellow]",
         )
         return cached_response
 
@@ -219,7 +224,8 @@ def retrieve_memcached_current_events_for_guild(guild_id):
         return response_json
 
     rprint(
-        f"[red]Error:[/red] Failed to fetch Discord events for guild ID [yellow]{guild_id}[/yellow]: {response.content}",
+        f"[red]Error:[/red] Failed to fetch Discord events"
+        f" for guild ID [yellow]{guild_id}[/yellow]: {response.content}",
     )
     return None
 
@@ -247,7 +253,8 @@ def upsert_event(event_data: dict):
 
         # scheduled_end_time is only available for events with 'entity_type': 3,
         # aka EXTERNAL,
-        # aka "Where is your event?" == "Somewhere Else. Text channel, external link or in-person location."
+        # aka "Where is your event?"
+        #        == "Somewhere Else. Text channel, external link or in-person location."
         if event_data["scheduled_end_time"]:
             event_update["$set"]["icalcord_scheduled_end_time"] = (
                 datetime.fromisoformat(event_data["scheduled_end_time"])
@@ -268,7 +275,8 @@ def upsert_event(event_data: dict):
 
         if result.upserted_id:
             rprint(
-                f"Inserted new event with _id: [yellow]{result.upserted_id}[/yellow] ([magenta]{event_data['name']}[/magenta])",
+                f"Inserted new event with _id: [yellow]{result.upserted_id}[/yellow]"
+                f" ([magenta]{event_data['name']}[/magenta])",
             )
         elif result.modified_count:
             rprint(f"Updated existing event ([magenta]{event_data['name']}[/magenta])")
@@ -336,7 +344,8 @@ def generate_ics_feed(guild_id):
 
     if events.retrieved == 0:
         rprint(
-            f"No events found for guild ID: [yellow]{guild_id}[/yellow], inserting VFREEBUSY component for spec compliance",
+            f"No events found for guild ID: [yellow]{guild_id}[/yellow],"
+            f" inserting VFREEBUSY component for spec compliance",
         )
         # Insert a VFREEBUSY component for spec compliance
         # when we don't have any events to insert at the time of feed generation.
@@ -476,7 +485,8 @@ async def fetch_and_store_events_for_guild(guild_id):
     rprint(f"Fetching events for guild ID: [yellow]{guild_id}[/yellow]")
 
     # The bot doesn't need to be present on server to fetch events
-    # if the server is "Discoverable" (1000+ members) and events are "Public" (default setting).
+    # if the server is "Discoverable" (1000+ members)
+    # and events are "Public" (default setting).
     # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
     discoverable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
     log_events(discoverable_events_json, guild_id)
@@ -487,13 +497,15 @@ async def fetch_and_store_events_for_guild(guild_id):
 
     # Is this fallback even necessary?
     rprint(
-        f"Attempting to fetch events using discord.py library for guild ID: [yellow]{guild_id}[/yellow]",
+        f"Attempting to fetch events using discord.py library"
+        f" for guild ID: [yellow]{guild_id}[/yellow]",
     )
     memcache_key = memcache_key_for_guild_events(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response is not None:
         rprint(
-            f"Using cached discord.py response for guild ID: [yellow]{guild_id}[/yellow]",
+            f"Using cached discord.py response"
+            f" for guild ID: [yellow]{guild_id}[/yellow]",
         )
         log_events(cached_response, guild_id)
         return
@@ -501,7 +513,8 @@ async def fetch_and_store_events_for_guild(guild_id):
     guild = discord_client.get_guild(guild_id)
     if guild is None:
         rprint(
-            f"[red]Error:[/red] Guild [yellow]{guild_id}[/yellow] not found (bot not invited?)",
+            f"[red]Error:[/red] Guild [yellow]{guild_id}[/yellow] not found"
+            f" (bot not invited?)",
         )
         return
     events = await guild.fetch_scheduled_events(with_counts=True)
@@ -525,7 +538,8 @@ async def fetch_and_store_events_for_guild(guild_id):
     )
 
     # TODO: Delete upcoming events that are absent from API response?
-    # Is there a more reliable way to detect deleted events than relying on API response consistency?
+    # Is there a more reliable way to detect deleted events
+    # than relying on API response consistency?
 
 
 @discord_client.event
@@ -533,7 +547,8 @@ async def on_ready():
     rprint(f"Logged into Discord as [yellow]{discord_client.user}[/yellow]")
     await start_http_server()
     rprint(
-        f"Started HTTP Server on {config['frontend']['ip']}:{config['frontend']['port']}",
+        f"Started HTTP Server"
+        f" on {config['frontend']['ip']}:{config['frontend']['port']}",
     )
 
 
