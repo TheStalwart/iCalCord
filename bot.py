@@ -203,18 +203,15 @@ def log_sentry_init_failure(error):
     pprint(error)
 
 
-def log_events(events, guild_id):
-    rprint(f"Events for guild ID: [yellow]{guild_id}[/yellow]:")
-    if args.debug:
-        pprint(events)
-    else:
-        if len(events) == 0:
-            rprint("No events found")
-        for ev in events:
-            human_readable_datetime = datetime.fromisoformat(
-                ev["scheduled_start_time"],
-            ).strftime("%Y-%m-%d %H:%M:%S")
-            rprint(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
+def log_events(events):
+    rprint("Events:")
+    if len(events) == 0:
+        rprint("No events found")
+    for ev in events:
+        human_readable_datetime = datetime.fromisoformat(
+            ev["scheduled_start_time"],
+        ).strftime("%Y-%m-%d %H:%M:%S")
+        rprint(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
 
 
 def retrieve_subscribed_users_for_event(guild_id, event_id):
@@ -548,7 +545,7 @@ async def fetch_and_store_events_for_guild(guild_id):
     # and events are "Public" (default setting).
     # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
     discoverable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
-    log_events(discoverable_events_json, guild_id)
+    log_events(discoverable_events_json)
     if discoverable_events_json is not None:
         for event_json in discoverable_events_json:
             upsert_event(event_json)
@@ -566,7 +563,7 @@ async def fetch_and_store_events_for_guild(guild_id):
             f"Using cached discord.py response"
             f" for guild ID: [yellow]{guild_id}[/yellow]",
         )
-        log_events(cached_response, guild_id)
+        log_events(cached_response)
         return
 
     guild = discord_client.get_guild(guild_id)
@@ -589,7 +586,7 @@ async def fetch_and_store_events_for_guild(guild_id):
             if subscribed_users is not None:
                 event["subscribed_users"] = subscribed_users
 
-        log_events(events, guild_id)
+        log_events(events)
     memcache_client.set(
         memcache_key,
         events,
