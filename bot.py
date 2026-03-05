@@ -132,15 +132,23 @@ def log_guild_info(guild_info):
 
 
 def discord_api_http_request(url):
-    # discord.py internal architecture collides with the fact
+    # discord.py internal intent-based event-listening architecture
+    # collides with the fact
     # Discoverable guilds allow fetching scheduled event data
     # without the bot being present on the server.
     # https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
     #
-    # So this API call:
-    # `discord_client.http.get_scheduled_events(guild_id, with_user_count=True)`
-    # stalls for MULTIPLE SECONDS,
-    # and it's MUCH FASTER to bypass discord.py entirely
+    # Also, these kinds of direct API calls:
+    # ` discord_client.http.get_scheduled_events(guild_id, with_user_count=True)
+    # as well as using internal HTTP client with arbitrary URL:
+    # ` data = await discord_client.http.request(
+    # `     discord.http.Route("GET", f"/guilds/{guild_id}/scheduled-events"),
+    # ` )
+    # stall for MULTIPLE SECONDS,
+    # and it's MUCH FASTER to bypass discord.py entirely.
+    # I also don't like the fact
+    # discord.py doesn't expose original JSON response,
+    # and i want to keep a copy of scheduled event JSON in the database.
     headers = {"Authorization": f"Bot {config['discord']['token']}"}
     return requests.get(
         url,
