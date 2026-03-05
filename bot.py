@@ -332,16 +332,16 @@ def upsert_event(event_data: dict):
         raise
 
 
-def generate_ics_feed(guild_id):
-    rprint(f"Generating .ics feed for guild ID: [yellow]{guild_id}[/yellow]")
-    ics_path = Path(FRONTEND_STATIC_PATH) / f"{guild_id}.ics"
+def generate_ics_feed(guild_info):
+    guild_id = f"{guild_info['id']}"
+    guild_name = guild_info.get("name", guild_id)
 
-    guild_name = f"{guild_id}"
-    guild_info = get_guild_info(guild_id)
-    if guild_info:
-        guild_name = guild_info.get("name", guild_id)
-    else:
-        rprint("[red]Warning:[/red] guild_info missing when generating ICS feed")
+    rprint(
+        f"Generating .ics feed for guild ID:"
+        f" [yellow]{guild_id}[/yellow] ([green]{guild_name}[/green])",
+    )
+
+    ics_path = Path(FRONTEND_STATIC_PATH) / f"{guild_id}.ics"
 
     events = mongo_collection.find({"guild_id": guild_id})
 
@@ -465,7 +465,7 @@ async def endpoint_handler_ics_feed_generator(request):
     guild_id = f"{guild_info['id']}"
 
     await fetch_and_store_events_for_guild(guild_id)
-    ics_feed = generate_ics_feed(guild_id)
+    ics_feed = generate_ics_feed(guild_info)
     return web.Response(body=ics_feed, content_type="text/calendar", charset="utf-8")
 
 
