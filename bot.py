@@ -576,53 +576,12 @@ async def fetch_and_store_events_for_guild(guild_id):
     if discoverable_events_json is not None:
         for event_json in discoverable_events_json:
             upsert_event(event_json)
-        return
-
-    # Is this fallback even necessary?
-    rprint(
-        f"Attempting to fetch events using discord.py library"
-        f" for guild ID: [yellow]{guild_id}[/yellow]",
-    )
-    memcache_key = memcache_key_for_guild_events(guild_id)
-    cached_response = memcache_client.get(memcache_key)
-    if cached_response is not None:
-        rprint(
-            f"Using cached discord.py response"
-            f" for guild ID: [yellow]{guild_id}[/yellow]",
-        )
-        log_events(cached_response)
-        return
-
-    guild = discord_client.get_guild(guild_id)
-    if guild is None:
-        rprint(
-            f"[red]Error:[/red] Guild [yellow]{guild_id}[/yellow] not found"
-            f" (bot not invited?)",
-        )
-        return
-    events = await guild.fetch_scheduled_events(with_counts=True)
-    if not events:
-        rprint("No scheduled events found.")
-    else:
-        rprint(f"Found [green]{len(events)}[/green] scheduled events:")
-
-        for event in events:
-            subscribed_users = guild.user(
-                retrieve_subscribed_users_for_event(guild_id, event["id"]),
-            )
-            if subscribed_users is not None:
-                event["subscribed_users"] = subscribed_users
-
-        log_events(events)
-    memcache_client.set(
-        memcache_key,
-        events,
-        time=config["memcache"]["value_ttl_seconds"],
-    )
 
     # TODO: Delete upcoming events that are absent from API response?
     # Is there a more reliable way to detect deleted events
     # than relying on API response consistency?
+
+    return discoverable_events_json
 
 
 @discord_client.event
