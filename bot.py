@@ -212,9 +212,11 @@ def log_sentry_init_failure(error):
 
 
 def log_events(events):
-    rprint("Events:")
     if len(events) == 0:
         rprint("No events found")
+        return
+
+    rprint("Events:")
     for ev in events:
         human_readable_datetime = datetime.fromisoformat(
             ev["scheduled_start_time"],
