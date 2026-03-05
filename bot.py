@@ -342,6 +342,40 @@ def upsert_event(event_data: dict):
         raise
 
 
+def generate_ics_vevent(event):
+    ics_event = Event()
+    ics_event.uid = f"{event['id']}@icalcord"
+    ics_event.summary = event["name"]
+    ics_event.stamp = event.get("icalcord_updated_time")
+
+    # I'm not gonna throw away old event data (right now)
+    if event.get("icalcord_scheduled_start_time"):
+        ics_event.start = event["icalcord_scheduled_start_time"]
+    elif isinstance(event["scheduled_start_time"], datetime):
+        ics_event.start = event["scheduled_start_time"]
+    else:
+        ics_event.start = datetime.fromisoformat(event["scheduled_start_time"])
+
+    if event.get("icalcord_scheduled_end_time"):
+        ics_event.end = event["icalcord_scheduled_end_time"]
+    elif isinstance(event["scheduled_end_time"], datetime):
+        ics_event.end = event["scheduled_end_time"]
+    elif event["scheduled_end_time"]:
+        ics_event.end = datetime.fromisoformat(event["scheduled_end_time"])
+    # Unless 'entity_type': 3,
+    # we don't get event end time nor duration from Discord API.
+    # RFC 5545 does not _require_ VEVENT to have DTEND or DURATION.
+    # Most popular calendar apps default to 1 hour for new events.
+
+    if event.get("description"):
+        ics_event.description = event["description"]
+
+    if event.get("entity_metadata") and event["entity_metadata"].get("location"):
+        ics_event.location = event["entity_metadata"]["location"]
+
+    return ics_event
+
+
 def generate_ics_feed(guild_info):
     guild_id = f"{guild_info['id']}"
     guild_name = guild_info.get("name", guild_id)
@@ -363,38 +397,7 @@ def generate_ics_feed(guild_info):
     ics.version = "2.0"
     ics.calendar_name = f"{guild_name} Events"
 
-    for event in events:
-        ics_event = Event()
-        ics_event.uid = f"{event['id']}@icalcord"
-        ics_event.summary = event["name"]
-        ics_event.stamp = event.get("icalcord_updated_time")
-
-        # I'm not gonna throw away old event data (right now)
-        if event.get("icalcord_scheduled_start_time"):
-            ics_event.start = event["icalcord_scheduled_start_time"]
-        elif isinstance(event["scheduled_start_time"], datetime):
-            ics_event.start = event["scheduled_start_time"]
-        else:
-            ics_event.start = datetime.fromisoformat(event["scheduled_start_time"])
-
-        if event.get("icalcord_scheduled_end_time"):
-            ics_event.end = event["icalcord_scheduled_end_time"]
-        elif isinstance(event["scheduled_end_time"], datetime):
-            ics_event.end = event["scheduled_end_time"]
-        elif event["scheduled_end_time"]:
-            ics_event.end = datetime.fromisoformat(event["scheduled_end_time"])
-        # Unless 'entity_type': 3,
-        # we don't get event end time nor duration from Discord API.
-        # RFC 5545 does not _require_ VEVENT to have DTEND or DURATION.
-        # Most popular caledar apps default to 1 hour for new events.
-
-        if event.get("description"):
-            ics_event.description = event["description"]
-
-        if event.get("entity_metadata") and event["entity_metadata"].get("location"):
-            ics_event.location = event["entity_metadata"]["location"]
-
-        ics.add_component(ics_event)
+    ics.subcomponents = list(map(generate_ics_vevent, events))
 
     if events.retrieved == 0:
         rprint(
