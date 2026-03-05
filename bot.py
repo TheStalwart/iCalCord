@@ -440,10 +440,29 @@ async def endpoint_handler_ics_feed_generator(request):
     guild_id = request.match_info["guild_id"]
 
     if not is_valid_discord_snowflake(guild_id):
+        rprint(
+            f"[red]Error:[/red] Guild ID [yellow]{guild_id}[/yellow]"
+            " failed basic input validation",
+        )
         return web.json_response(
             {"error": "Invalid Guild ID", "code": requests.codes.bad_request},
             status=requests.codes.bad_request,
         )
+
+    guild_info = get_guild_info(guild_id)
+    if not guild_info:
+        rprint(
+            f"[red]Error:[/red] Guild [yellow]{guild_id}[/yellow] not found"
+            f" (bot not invited?)",
+        )
+        return web.json_response(
+            {
+                "error": "Invalid Guild ID or Invite Only Guild",
+                "code": requests.codes.forbidden,
+            },
+            status=requests.codes.forbidden,
+        )
+    guild_id = f"{guild_info['id']}"
 
     await fetch_and_store_events_for_guild(guild_id)
     ics_feed = generate_ics_feed(guild_id)
