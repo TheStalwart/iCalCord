@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
@@ -48,7 +49,7 @@ arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument(
     "--debug",
     action="store_true",
-    help="Print extra values and generate static .ics files",
+    help="Print extra values and generate static ics/json files",
 )
 args = arg_parser.parse_args()
 
@@ -542,6 +543,12 @@ async def endpoint_handler_suggested_feeds(request):
         output,
         time=config["memcache"]["suggested_feeds_ttl_seconds"],
     )
+
+    if args.debug:
+        static_json_path = Path(FRONTEND_STATIC_PATH) / "suggested.json"
+        with static_json_path.open("w", encoding="utf-8") as json_file:
+            json.dump(output, json_file, indent=2)
+            rprint(f"Saved static [green]{static_json_path}[/green] file")
 
     return web.json_response(output)
 

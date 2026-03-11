@@ -1,2 +1,3 @@
-# When debugging, static ICS files will be dumped here
+# When debugging, static ICS and JSON files will be dumped here
 *.ics
+*.json
