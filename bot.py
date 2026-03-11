@@ -509,7 +509,7 @@ async def endpoint_handler_suggested_feeds(request):
 
     recent_events = list(mongo_collection.find(query_filter, query_projection))
 
-    unique_guild_ids = list(set(map(lambda ev: ev["guild_id"], recent_events)))
+    unique_guild_ids = list({ev["guild_id"] for ev in recent_events})
 
     def format_guild_info(guild_id):
         guild_info = get_guild_info(guild_id)
