@@ -502,7 +502,7 @@ async def endpoint_handler_suggested_feeds(request):
         "icalcord_scheduled_start_time": {"$gte": one_month_ago},
     }
 
-    query_projection = {field: 1 for field in MEANINGFUL_FIELDS} | {
+    query_projection = dict.fromkeys(MEANINGFUL_FIELDS, 1) | {
         "guild_id": 1,
         "_id": 0,  # exclude _id because type ObjectId is not JSON serializable
     }
