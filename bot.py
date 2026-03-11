@@ -591,6 +591,9 @@ async def fetch_and_store_events_for_guild(guild_id):
     # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
     discoverable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
     log_events(discoverable_events_json)
+
+    # TODO: do not update MongoDB entries
+    # if `discoverable_events_json` was returned from memcache
     if discoverable_events_json is not None:
         for event_json in discoverable_events_json:
             upsert_event(event_json)
