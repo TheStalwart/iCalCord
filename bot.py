@@ -531,7 +531,7 @@ async def endpoint_handler_suggested_feeds(request):
     # and refresh the oldest caches when there's enough capacity.
     guild_info = map(format_guild_info, unique_guild_ids)
 
-    output = list(guild_info)
+    output = {"guilds": list(guild_info)}
 
     # I could implement a more sophisticated value generation here, but:
     # - i want to shift processing to client machines as much as possible
