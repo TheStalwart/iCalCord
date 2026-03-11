@@ -334,9 +334,15 @@ def upsert_event(event_data: dict):
                 f" ([magenta]{event_data['name']}[/magenta])",
             )
         elif result.modified_count:
-            rprint(f"Updated existing event ([magenta]{event_data['name']}[/magenta])")
+            action_executed = "Updated" if data_changed else "Verified"
+            rprint(
+                f"{action_executed} upcoming event"
+                f" ([magenta]{event_data['name']}[/magenta])",
+            )
         else:
-            rprint("No changes needed")
+            # This should never happen,
+            # as we always update at least the `icalcord_last_seen_time` value
+            rprint("[red]Warning:[/red] No changes made!")
 
     except PyMongoError as e:
         rprint("[red]Database error:[/red]", e)
