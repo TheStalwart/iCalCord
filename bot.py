@@ -24,6 +24,8 @@ CONFIG_FILE_PATH = Path(PROJECT_ROOT) / "config.yaml"
 FRONTEND_ROOT_PATH = Path(PROJECT_ROOT) / "frontend"
 FRONTEND_STATIC_PATH = Path(FRONTEND_ROOT_PATH) / "static"
 
+# Guild Object Fields worth returning to frontend
+GUILD_MEANINGFUL_FIELDS = ["id", "name", "description"]
 
 # Guild Scheduled Event Object Fields that indicate a meaningful change to the event.
 #
@@ -35,7 +37,7 @@ FRONTEND_STATIC_PATH = Path(FRONTEND_ROOT_PATH) / "static"
 # and is only used in custom feeds to filter events based on user ID.
 #
 # https://docs.discord.com/developers/resources/guild-scheduled-event
-MEANINGFUL_FIELDS = [
+EVENT_MEANINGFUL_FIELDS = [
     "name",
     "description",
     "scheduled_start_time",
@@ -291,7 +293,8 @@ def upsert_event(event_data: dict):
 
         # Check if any of the meaningful fields changed
         data_changed = existing is None or any(
-            event_data.get(field) != existing.get(field) for field in MEANINGFUL_FIELDS
+            event_data.get(field) != existing.get(field)
+            for field in EVENT_MEANINGFUL_FIELDS
         )
 
         event_update = {
@@ -500,18 +503,15 @@ async def endpoint_handler_preview(request):
     # TODO: return past events from MongoDB, not just upcoming events
     guild_events = await fetch_and_store_events_for_guild(guild_id)
 
-    def trim_dicts(data):
-        """
-        data: list[dict]
-        returns: new list[dict] with only MEANINGFUL_FIELDS preserved
-        """
-        return [
-            {k: v for k, v in item.items() if k in MEANINGFUL_FIELDS} for item in data
-        ]
+    trimmed_guild_info = {
+        k: v for k, v in guild_info.items() if k in GUILD_MEANINGFUL_FIELDS
+    }
+    trimmed_events = [
+        {k: v for k, v in gev.items() if k in EVENT_MEANINGFUL_FIELDS}
+        for gev in guild_events
+    ]
 
-    trimmed_events = trim_dicts(guild_events)
-
-    output = {**guild_info, "events": trimmed_events}
+    output = {**trimmed_guild_info, "events": trimmed_events}
 
     if args.debug:
         static_json_path = Path(FRONTEND_STATIC_PATH) / f"{guild_info['id']}.json"
@@ -576,7 +576,7 @@ async def endpoint_handler_suggested_feeds(request):
         "icalcord_scheduled_start_time": {"$gte": one_month_ago},
     }
 
-    query_projection = dict.fromkeys(MEANINGFUL_FIELDS, 1) | {
+    query_projection = dict.fromkeys(EVENT_MEANINGFUL_FIELDS, 1) | {
         "guild_id": 1,
         "_id": 0,  # exclude _id because type ObjectId is not JSON serializable
     }
