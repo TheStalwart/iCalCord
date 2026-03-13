@@ -454,6 +454,74 @@ async def frontend_index(request):
     return web.FileResponse(Path(FRONTEND_ROOT_PATH) / "index.html")
 
 
+async def endpoint_handler_preview(request):
+    log_http_request(request)
+
+    snowflake_or_invite_code = request.match_info["snowflake_or_invite_code"]
+    guild_id = None
+    guild_info = None
+
+    if is_valid_discord_snowflake(snowflake_or_invite_code):
+        guild_id = snowflake_or_invite_code
+    else:
+        try:
+            invite = await discord_client.fetch_invite(snowflake_or_invite_code)
+            guild_id = f"{invite.guild.id}"
+        except discord.errors.NotFound as exc:
+            rprint("Invite code not found:")
+            pprint(exc)
+
+        if not is_valid_discord_snowflake(guild_id):
+            return web.json_response(
+                {
+                    "error": "Parameter must be either Guild ID or Invite Code",
+                    "code": requests.codes.bad_request,
+                },
+                status=requests.codes.bad_request,
+            )
+        guild_info = {"id": guild_id, "name": invite.guild.name}
+
+    if not guild_info:
+        guild_info = get_guild_info(guild_id)
+
+    if guild_info is None:
+        return web.json_response(
+            {"error": "Invalid Guild ID", "code": requests.codes.forbidden},
+            status=requests.codes.forbidden,
+        )
+
+    rprint(
+        f"Resolved [green]{snowflake_or_invite_code}[/green]"
+        f" as [yellow]{guild_id}[/yellow] ({guild_info['name']})",
+    )
+
+    # TODO: cache resolved invite codes
+
+    # TODO: return past events from MongoDB, not just upcoming events
+    guild_events = await fetch_and_store_events_for_guild(guild_id)
+
+    def trim_dicts(data):
+        """
+        data: list[dict]
+        returns: new list[dict] with only MEANINGFUL_FIELDS preserved
+        """
+        return [
+            {k: v for k, v in item.items() if k in MEANINGFUL_FIELDS} for item in data
+        ]
+
+    trimmed_events = trim_dicts(guild_events)
+
+    output = {**guild_info, "events": trimmed_events}
+
+    if args.debug:
+        static_json_path = Path(FRONTEND_STATIC_PATH) / f"{guild_info['id']}.json"
+        with static_json_path.open("w", encoding="utf-8") as json_file:
+            json.dump(output, json_file, indent=2)
+            rprint(f"Saved static [green]{static_json_path}[/green] file")
+
+    return web.json_response(output)
+
+
 async def endpoint_handler_ics_feed_generator(request):
     log_http_request(request)
 
@@ -561,6 +629,13 @@ async def endpoint_handler_suggested_feeds(request):
 
 async def start_http_server():
     app = web.Application()
+
+    # Verify access to a specific Guild.
+    # {id} can be Snowflake or Invite Code
+    app.router.add_get(
+        "/preview/{snowflake_or_invite_code}.json",
+        endpoint_handler_preview,
+    )
 
     # Generate a feed for a specific Guild ID
     app.router.add_get("/feed/{guild_id}.ics", endpoint_handler_ics_feed_generator)
