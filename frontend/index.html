@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>iCalCord: Discord Events as iCalendar feeds</title>
     <link rel="stylesheet" href="static/stylesheet.css">
-
+    <script type="module" src="static/scripts.js"></script>
 
     <!--
         Rich link preview metadata for social media
@@ -38,9 +38,14 @@
     <p>iCalCord is a Discord bot that generates iCalendar (.ics) feeds for Discord server events. It allows users to
         subscribe to their server's event calendar using any calendar application that supports the iCalendar format.
     </p>
-    <p>
-        Use Guild ID as the last component in url, e.g.: <a
-            href="/feed/1193841000108531764.ics">/feed/1193841000108531764.ics</a>
+
+    <form id="previewForm">
+        <input type="text" id="previewInput" placeholder="Paste Discord Server Invite Link or Guild ID">
+        <button type="submit">Preview event feed</button>
+        <p class="errorMessageContainer"></p>
+    </form>
+
+    <p id="previewContainer">
     </p>
 
     <p>

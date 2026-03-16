@@ -17,3 +17,11 @@ a:hover,
 a:active {
     color: #A466FB;
 }
+
+input {
+    width: 40ch;
+}
+
+.errorMessageContainer {
+    color: red;
+}
