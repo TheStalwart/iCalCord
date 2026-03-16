@@ -732,4 +732,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        # If we don't catch it,
+        # Sentry.io will complain every time the process is killed with ctrl+c
+        rprint("[red]Interrupted, exiting...[/red]")
