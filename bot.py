@@ -5,6 +5,7 @@ import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import discord
 import memcache
@@ -67,6 +68,7 @@ with CONFIG_FILE_PATH.open() as stream:
         )
         rprint(exc)
         sys.exit(1)
+config["log"]["timezone_zoneinfo"] = ZoneInfo(config["log"]["timezone"])
 
 
 # Initialize Sentry SDK.
@@ -221,9 +223,13 @@ def log_events(events):
 
     rprint("Events:")
     for ev in events:
-        human_readable_datetime = datetime.fromisoformat(
-            ev["scheduled_start_time"],
-        ).strftime("%Y-%m-%d %H:%M:%S")
+        human_readable_datetime = (
+            datetime.fromisoformat(
+                ev["scheduled_start_time"],
+            )
+            .astimezone(config["log"]["timezone_zoneinfo"])
+            .strftime(config["log"]["timestamp_format"])
+        )
         rprint(f" - {ev['id']} @ {human_readable_datetime}: {ev['name']}")
 
 
@@ -448,7 +454,14 @@ def log_http_request(request):
     # X-Forwarded-For header is set to actual client IP by proxy.
     client_ip = request.headers.get("X-Forwarded-For", request.remote)
 
-    rprint(f"[blue]{client_ip}[/blue] HTTP requested: [green]{request.rel_url}[/green]")
+    timestamp_string = datetime.now(
+        tz=config["log"]["timezone_zoneinfo"],
+    ).strftime(config["log"]["timestamp_format"])
+
+    rprint(
+        f"{timestamp_string} [blue]{client_ip}[/blue]"
+        f" HTTP requested: [green]{request.rel_url}[/green]",
+    )
 
 
 async def frontend_index(request):
