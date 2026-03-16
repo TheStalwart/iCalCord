@@ -75,7 +75,7 @@ function renderFeedPreview(guild_info) {
 
   if (guild_info.events.length) {
     const eventListElement = document.createElement("ul");
-    eventListElement.appendChild(
+    eventListElement.append(
       ...guild_info.events.map((guild_event) => {
         const li = document.createElement("li");
         li.textContent = guild_event.name;
