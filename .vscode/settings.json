@@ -4,27 +4,30 @@
   "files.associations": {
     // stop markdownlint from complaining about a plain text LICENSE file
     "LICENSE": "plaintext",
-    "*.yaml.example": "yaml",
+    "*.yaml.example": "yaml"
   },
   "ruff.enable": true,
-  "ruff.lint.select": [
-    "ALL"
-  ],
+  "ruff.lint.select": ["ALL"],
   "ruff.lint.ignore": [
     "ANN", // type annotations
     "D", // docstrings
     "TD", // TODO
-    "FIX", // TODO
+    "FIX" // TODO
   ],
   "[jsonc]": {
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
     // When opening a file, `editor.tabSize` and `editor.insertSpaces`
     // will be detected based on the file contents. Set to false to keep
     // the values you've explicitly set, above.
     // https://stackoverflow.com/a/29972553
     "editor.detectIndentation": false
+  },
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[css]": {
     "editor.formatOnSave": true,
@@ -39,6 +42,6 @@
   },
   "[html]": {
     "editor.defaultFormatter": "vscode.html-language-features",
-    "editor.formatOnSave": true,
-  },
+    "editor.formatOnSave": true
+  }
 }

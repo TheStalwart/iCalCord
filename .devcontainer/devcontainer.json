@@ -23,7 +23,8 @@
         "af4jm.vscode-icalendar",
         "charliermarsh.ruff",
         "DavidAnson.vscode-markdownlint",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode"
       ]
     }
   },

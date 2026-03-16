@@ -4,5 +4,6 @@
     "charliermarsh.ruff",
     "DavidAnson.vscode-markdownlint",
     "eamodio.gitlens",
+    "esbenp.prettier-vscode",
   ]
 }
