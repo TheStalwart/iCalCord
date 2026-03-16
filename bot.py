@@ -271,6 +271,18 @@ def retrieve_memcached_current_events_for_guild(guild_id):
     if response.status_code == requests.codes.ok:  # 200
         response_json = response.json()
 
+        # Sentry.io flagged this as "Consecutive HTTP".
+        # This is, in fact, a bad idea.
+        # "AI" suggested to group the calls, but that idea is even worse
+        # due to Discord API request limits.
+        # It's unusual for Discord servers to have lots of scheduled events,
+        # but as of March 2026, one such server is
+        # 229259188856029184: Eurovision Song Contest.
+        # There are many ways to solve this,
+        # i could keep track of the last update of subscribed_users in DB,
+        # and update N oldest entries on every feed request.
+        # Another way would be to only refresh subscribed_users
+        # if someone requested a custom feed in the last N days.
         for event in response_json:
             subscribed_users = retrieve_subscribed_users_for_event(
                 guild_id,
