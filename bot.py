@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import json
-import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -20,7 +19,7 @@ from rich import print as rprint
 from rich.pretty import pprint
 
 # Define file paths
-PROJECT_ROOT = pathlib.Path(__file__).parent.resolve()
+PROJECT_ROOT = Path(__file__).parent.resolve()
 CONFIG_FILE_PATH = Path(PROJECT_ROOT) / "config.yaml"
 FRONTEND_ROOT_PATH = Path(PROJECT_ROOT) / "frontend"
 FRONTEND_STATIC_PATH = Path(FRONTEND_ROOT_PATH) / "static"
