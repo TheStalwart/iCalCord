@@ -1,0 +1,19 @@
+{
+  "name": "iCalCord",
+  "short_name": "iCalCord",
+  "icons": [
+    {
+      "src": "/static/logo/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/logo/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#0E0B17",
+  "background_color": "#0E0B17",
+  "display": "standalone"
+}

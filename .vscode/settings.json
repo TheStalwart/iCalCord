@@ -4,6 +4,7 @@
   "files.associations": {
     // stop markdownlint from complaining about a plain text LICENSE file
     "LICENSE": "plaintext",
+    "*.webmanifest": "jsonc",
     "*.yaml.example": "yaml"
   },
   "ruff.enable": true,

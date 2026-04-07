@@ -705,7 +705,14 @@ async def frontend_index(request):
     """Serve the frontend index page and log the incoming HTTP request."""
     log_http_request(request)
 
-    return web.FileResponse(Path(FRONTEND_ROOT_PATH) / "index.html")
+    return web.FileResponse(FRONTEND_ROOT_PATH / "index.html")
+
+
+async def serve_legacy_favicon(request):
+    """Serve the legacy favicon.ico file for compatibility with older clients."""
+    log_http_request(request)
+
+    return web.FileResponse(FRONTEND_STATIC_PATH / "logo" / "favicon.ico")
 
 
 async def endpoint_handler_preview(request) -> web.Response:
@@ -935,6 +942,9 @@ async def start_http_server() -> None:
 
     # Root index.html
     app.router.add_get("/", frontend_index)
+
+    # /favicon.ico for legacy browsers
+    app.router.add_get("/favicon.ico", serve_legacy_favicon)
 
     # Serve entire /frontend/static directory
     app.router.add_static("/static/", path=FRONTEND_STATIC_PATH)
