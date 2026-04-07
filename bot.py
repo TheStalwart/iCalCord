@@ -524,7 +524,7 @@ async def endpoint_handler_preview(request):
     # TODO: cache resolved invite codes
 
     # TODO: return past events from MongoDB, not just upcoming events
-    guild_events = await fetch_and_store_events_for_guild(guild_id)
+    guild_events = await fetch_and_store_upcoming_events_for_guild(guild_id)
 
     trimmed_guild_info = {
         k: v for k, v in guild_info.items() if k in GUILD_MEANINGFUL_FIELDS
@@ -575,7 +575,7 @@ async def endpoint_handler_ics_feed_generator(request):
         )
     guild_id = f"{guild_info['id']}"
 
-    await fetch_and_store_events_for_guild(guild_id)
+    await fetch_and_store_upcoming_events_for_guild(guild_id)
     ics_feed = generate_ics_calendar(guild_info).to_ical()
     return web.Response(body=ics_feed, content_type="text/calendar", charset="utf-8")
 
@@ -680,7 +680,7 @@ async def start_http_server():
     await site.start()
 
 
-async def fetch_and_store_events_for_guild(guild_id):
+async def fetch_and_store_upcoming_events_for_guild(guild_id):
     rprint(f"Fetching upcoming events for guild ID: [yellow]{guild_id}[/yellow]")
 
     # The bot doesn't need to be present on server to fetch events
