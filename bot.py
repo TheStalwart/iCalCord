@@ -991,9 +991,16 @@ async def on_ready() -> None:
     """
     rprint(f"Logged into Discord as [yellow]{discord_client.user}[/yellow]")
     await start_http_server()
+
+    clickable_url_suffix = (
+        f"aka http://localhost:{config['frontend']['port']}"
+        if config["frontend"]["ip"] == "0.0.0.0"  # noqa: S104
+        else ""
+    )
     rprint(
-        f"Started HTTP Server"
-        f" on {config['frontend']['ip']}:{config['frontend']['port']}",
+        "Started HTTP Server"
+        f" on http://{config['frontend']['ip']}:{config['frontend']['port']}",
+        clickable_url_suffix,
     )
 
 
