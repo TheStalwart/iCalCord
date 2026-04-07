@@ -233,23 +233,40 @@ def discord_api_http_request(url):
     )
 
 
-def is_valid_discord_snowflake(snowflake):
-    """Validate whether a string is a plausible Discord Snowflake.
+def is_valid_discord_snowflake(snowflake: str | None) -> bool:
+    """Validate whether a value is a plausible Discord Snowflake.
 
+    A Discord Snowflake is an unsigned 64-bit integer
+    represented as a decimal string.
+    This function performs lightweight validation
+    suitable for input sanitization and basic format checks.
+
+    The validation criteria are:
+    - The value is not None
+    - The value contains digits only
+    - The length is within the expected Snowflake range (16-20 digits)
+
+    Notes
+    -----
+    This function does not fully validate Snowflake semantics
+    (e.g., timestamp correctness).
+    It only checks structural plausibility.
+
+    References
+    ----------
     - https://docs.discord.com/developers/reference#snowflakes
     - https://medium.com/netcord/discord-snowflake-explained-id-generation-process-a468be00a570
     - https://discordutils.com/snowflake-decoder
 
     Parameters
     ----------
-    snowflake : str
-        The Snowflake value to validate.
+    snowflake : str | None
+        The value to validate.
 
     Returns
     -------
     bool
-        True if the value is digits only
-        and within the expected Snowflake length range,
+        True if the value appears to be a valid Snowflake identifier,
         otherwise False.
 
     """
