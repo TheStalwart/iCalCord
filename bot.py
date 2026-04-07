@@ -78,7 +78,7 @@ with CONFIG_FILE_PATH.open() as stream:
 config["log"]["timezone_zoneinfo"] = ZoneInfo(config["log"]["timezone"])
 
 
-def initialize_sentry_sdk():
+def initialize_sentry_sdk() -> None:
     """Initialize Sentry SDK using configuration values.
 
     Reads the Sentry configuration from the global config dictionary
@@ -129,7 +129,7 @@ memcache_client = memcache.Client(
 )
 
 
-def memcache_key_for_guild_events(guild_id):
+def memcache_key_for_guild_events(guild_id) -> str:
     """Generate a memcache key for guild events.
 
     Parameters
@@ -146,7 +146,7 @@ def memcache_key_for_guild_events(guild_id):
     return f"{config['memcache']['key_prefix']}_guild_events_{guild_id}"
 
 
-def memcache_key_for_guild_info(guild_id):
+def memcache_key_for_guild_info(guild_id) -> str:
     """Generate a memcache key for guild info.
 
     Parameters
@@ -163,12 +163,12 @@ def memcache_key_for_guild_info(guild_id):
     return f"{config['memcache']['key_prefix']}_guild_info_{guild_id}"
 
 
-def memcache_key_for_suggested_feeds():
+def memcache_key_for_suggested_feeds() -> str:
     """Return a memcache key for generated "suggested feeds" output."""
     return f"{config['memcache']['key_prefix']}_suggested_feeds"
 
 
-def log_guild_info(guild_info):
+def log_guild_info(guild_info) -> None:
     """Log the guild ID and name for debugging and informational output.
 
     Parameters
@@ -345,7 +345,7 @@ def log_sentry_init_failure(exc: Exception) -> None:
     pprint(exc)
 
 
-def log_events(events):
+def log_events(events: list[dict]) -> None:
     """Log a list of Discord scheduled events for debugging output.
 
     Parameters
@@ -477,7 +477,7 @@ def retrieve_memcached_upcoming_events_for_guild(guild_id):
     return None
 
 
-def upsert_event(event_data: dict):
+def upsert_event(event_data: dict) -> None:
     """Upsert a Discord scheduled event into the MongoDB collection.
 
     Checks for changes in meaningful fields,
@@ -561,7 +561,7 @@ def upsert_event(event_data: dict):
         raise
 
 
-def generate_ics_vevent(event):
+def generate_ics_vevent(event: dict) -> Event:
     """Convert a Discord scheduled event document into an iCalendar VEVENT.
 
     Parameters
@@ -708,7 +708,7 @@ async def frontend_index(request):
     return web.FileResponse(Path(FRONTEND_ROOT_PATH) / "index.html")
 
 
-async def endpoint_handler_preview(request):
+async def endpoint_handler_preview(request) -> web.Response:
     """Preview event data by resolving a guild snowflake or invite code."""
     log_http_request(request)
 
@@ -774,7 +774,7 @@ async def endpoint_handler_preview(request):
     return web.json_response(output)
 
 
-async def endpoint_handler_ics_feed_generator(request):
+async def endpoint_handler_ics_feed_generator(request) -> web.Response:
     """Handle requests to generate an ICS feed for a guild.
 
     Parameters
@@ -823,7 +823,7 @@ async def endpoint_handler_ics_feed_generator(request):
     return web.Response(body=ics_feed, content_type="text/calendar", charset="utf-8")
 
 
-async def endpoint_handler_suggested_feeds(request):
+async def endpoint_handler_suggested_feeds(request) -> web.Response:
     """Handle requests for suggested feeds and return cached or generated JSON.
 
     Parameters
@@ -906,7 +906,7 @@ async def endpoint_handler_suggested_feeds(request):
     return web.json_response(output)
 
 
-async def start_http_server():
+async def start_http_server() -> None:
     """Start the aiohttp web server with configured routes and static file serving.
 
     Sets up the HTTP server with routes for feed generation, guild preview,
@@ -982,7 +982,7 @@ async def fetch_and_store_upcoming_events_for_guild(guild_id):
 
 
 @discord_client.event
-async def on_ready():
+async def on_ready() -> None:
     """Handle the Discord client ready event and start the HTTP server.
 
     This event is called once the Discord client has successfully connected.
@@ -998,7 +998,7 @@ async def on_ready():
 
 
 @discord_client.event
-async def on_message(message):
+async def on_message(message: discord.Message) -> None:
     """Handle incoming Discord messages and respond to bot commands.
 
     TODO: implement a slash command (e.g. /icalcord)
