@@ -255,7 +255,7 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
     return None
 
 
-def retrieve_memcached_current_events_for_guild(guild_id):
+def retrieve_memcached_upcoming_events_for_guild(guild_id):
     memcache_key = memcache_key_for_guild_events(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
@@ -687,7 +687,7 @@ async def fetch_and_store_events_for_guild(guild_id):
     # if the server is "Discoverable" (1000+ members)
     # and events are "Public" (default setting).
     # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
-    discoverable_events_json = retrieve_memcached_current_events_for_guild(guild_id)
+    discoverable_events_json = retrieve_memcached_upcoming_events_for_guild(guild_id)
     log_events(discoverable_events_json)
 
     # TODO: do not update MongoDB entries
