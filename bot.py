@@ -403,7 +403,7 @@ def generate_ics_vevent(event):
     return ics_event
 
 
-def generate_ics_feed(guild_info):
+def generate_ics_calendar(guild_info):
     guild_id = f"{guild_info['id']}"
     guild_name = guild_info.get("name", guild_id)
 
@@ -444,14 +444,13 @@ def generate_ics_feed(guild_info):
         vfreebusy.stamp = datetime(2026, 3, 1, tzinfo=timezone.utc)
         ics.add_component(vfreebusy)
 
-    ics_feed = ics.to_ical()
-
     if args.debug:
         with ics_path.open("wb") as ics_file:
+            ics_feed = ics.to_ical()
             ics_file.write(ics_feed)
             rprint(f"Saved static [green]{ics_path}[/green] file")
 
-    return ics_feed
+    return ics
 
 
 # Set up Discord API client
@@ -577,7 +576,7 @@ async def endpoint_handler_ics_feed_generator(request):
     guild_id = f"{guild_info['id']}"
 
     await fetch_and_store_events_for_guild(guild_id)
-    ics_feed = generate_ics_feed(guild_info)
+    ics_feed = generate_ics_calendar(guild_info).to_ical()
     return web.Response(body=ics_feed, content_type="text/calendar", charset="utf-8")
 
 
