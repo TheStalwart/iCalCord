@@ -681,7 +681,7 @@ async def start_http_server():
 
 
 async def fetch_and_store_events_for_guild(guild_id):
-    rprint(f"Fetching events for guild ID: [yellow]{guild_id}[/yellow]")
+    rprint(f"Fetching upcoming events for guild ID: [yellow]{guild_id}[/yellow]")
 
     # The bot doesn't need to be present on server to fetch events
     # if the server is "Discoverable" (1000+ members)
