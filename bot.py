@@ -716,6 +716,9 @@ async def endpoint_handler_preview(request) -> web.Response:
     guild_id = None
     guild_info = None
 
+    # Define generic error message in case we fail to resolve a more specific one later
+    error = "Parameter must be either Guild ID or Invite Code"
+
     if is_valid_discord_snowflake(snowflake_or_invite_code):
         guild_id = snowflake_or_invite_code
     else:
@@ -725,11 +728,12 @@ async def endpoint_handler_preview(request) -> web.Response:
         except discord.errors.NotFound as exc:
             rprint("Invite code not found:")
             pprint(exc)
+            error = exc.text
 
         if not is_valid_discord_snowflake(guild_id):
             return web.json_response(
                 {
-                    "error": "Parameter must be either Guild ID or Invite Code",
+                    "error": error,
                     "code": requests.codes.bad_request,
                 },
                 status=requests.codes.bad_request,
