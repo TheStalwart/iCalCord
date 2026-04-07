@@ -24,7 +24,8 @@
         "charliermarsh.ruff",
         "DavidAnson.vscode-markdownlint",
         "eamodio.gitlens",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "johnpapa.vscode-peacock"
       ]
     }
   },

@@ -43,5 +43,25 @@
   "[html]": {
     "editor.defaultFormatter": "vscode.html-language-features",
     "editor.formatOnSave": true
-  }
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#231b39",
+    "activityBar.background": "#231b39",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#82503d",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#e7e7e799",
+    "sash.hoverBorder": "#231b39",
+    "statusBar.background": "#0e0b17",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#231b39",
+    "statusBarItem.remoteBackground": "#0e0b17",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#0e0b17",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#0e0b1799",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  },
+  "peacock.color": "#0E0B17"
 }
