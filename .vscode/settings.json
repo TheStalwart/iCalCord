@@ -10,7 +10,6 @@
   "ruff.lint.select": ["ALL"],
   "ruff.lint.ignore": [
     "ANN", // type annotations
-    "D", // docstrings
     "TD", // TODO
     "FIX" // TODO
   ],

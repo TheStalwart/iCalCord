@@ -1,3 +1,11 @@
+"""iCalCord: Discord Events as iCalendar feeds.
+
+A Discord bot to export Guild Scheduled Events
+as industry standard iCalendar feeds (.ics),
+compatible with Google Calendar, Apple iCloud, Microsoft Outlook, Mozilla Thunderbird
+and other sane calendar software.
+"""
+
 import argparse
 import asyncio
 import json
@@ -70,9 +78,16 @@ with CONFIG_FILE_PATH.open() as stream:
 config["log"]["timezone_zoneinfo"] = ZoneInfo(config["log"]["timezone"])
 
 
-# Initialize Sentry SDK.
-# Silently ignore failure when debugging.
 def initialize_sentry_sdk():
+    """Initialize Sentry SDK using configuration values.
+
+    Reads the Sentry configuration from the global config dictionary
+    and initializes sentry_sdk with the configured DSN and sampling rates.
+    When running in debug mode, initialization is skipped
+    unless a DSN is explicitly configured.
+
+    When debugging, silently ignores failure.
+    """
     sentry_config = config.get("sentry")
 
     if args.debug and not sentry_config:
@@ -115,18 +130,54 @@ memcache_client = memcache.Client(
 
 
 def memcache_key_for_guild_events(guild_id):
+    """Generate a memcache key for guild events.
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild.
+
+    Returns
+    -------
+    str
+        The memcache key for the guild's events.
+
+    """
     return f"{config['memcache']['key_prefix']}_guild_events_{guild_id}"
 
 
 def memcache_key_for_guild_info(guild_id):
+    """Generate a memcache key for guild info.
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild.
+
+    Returns
+    -------
+    str
+        The memcache key for the guild's info.
+
+    """
     return f"{config['memcache']['key_prefix']}_guild_info_{guild_id}"
 
 
 def memcache_key_for_suggested_feeds():
+    """Return a memcache key for generated "suggested feeds" output."""
     return f"{config['memcache']['key_prefix']}_suggested_feeds"
 
 
 def log_guild_info(guild_info):
+    """Log the guild ID and name for debugging and informational output.
+
+    Parameters
+    ----------
+    guild_info : dict
+        Dictionary containing guild data,
+        expected to include the 'id' and 'name' keys.
+
+    """
     guild_id = guild_info.get("id", "Unknown")
     guild_name = guild_info.get("name", "Unknown")
 
@@ -136,23 +187,44 @@ def log_guild_info(guild_info):
 
 
 def discord_api_http_request(url):
-    # discord.py internal intent-based event-listening architecture
-    # collides with the fact
-    # Discoverable guilds allow fetching scheduled event data
-    # without the bot being present on the server.
-    # https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
-    #
-    # Also, these kinds of direct API calls:
-    # ` discord_client.http.get_scheduled_events(guild_id, with_user_count=True)
-    # as well as using internal HTTP client with arbitrary URL:
-    # ` data = await discord_client.http.request(
-    # `     discord.http.Route("GET", f"/guilds/{guild_id}/scheduled-events"),
-    # ` )
-    # stall for MULTIPLE SECONDS,
-    # and it's MUCH FASTER to bypass discord.py entirely.
-    # I also don't like the fact
-    # discord.py doesn't expose original JSON response,
-    # and i want to keep a copy of scheduled event JSON in the database.
+    """Perform a direct Discord API GET request with the configured bot token.
+
+    discord.py internal intent-based event-listening architecture
+    collides with the fact
+    Discoverable guilds allow fetching scheduled event data
+    without the bot being present on the server.
+    https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
+
+    Also, these kinds of direct API calls:
+    ```
+    discord_client.http.get_scheduled_events(guild_id, with_user_count=True)
+    ```
+
+    as well as using internal HTTP client with arbitrary URL:
+    ```
+    data = await discord_client.http.request(
+        discord.http.Route("GET", f"/guilds/{guild_id}/scheduled-events"),
+    )
+    ```
+
+    stall for MULTIPLE SECONDS,
+    and it's MUCH FASTER to bypass discord.py entirely.
+
+    I also don't like the fact
+    discord.py doesn't expose original JSON response,
+    as i want to keep a copy of scheduled event JSON in the database.
+
+    Parameters
+    ----------
+    url : str
+        The Discord API endpoint URL to query.
+
+    Returns
+    -------
+    requests.Response
+        The HTTP response returned by the Discord API.
+
+    """
     headers = {"Authorization": f"Bot {config['discord']['token']}"}
     return requests.get(
         url,
@@ -161,11 +233,26 @@ def discord_api_http_request(url):
     )
 
 
-# Basic validation of a Discord Snowflake.
-# https://docs.discord.com/developers/reference#snowflakes
-# https://medium.com/netcord/discord-snowflake-explained-id-generation-process-a468be00a570
-# https://discordutils.com/snowflake-decoder
 def is_valid_discord_snowflake(snowflake):
+    """Validate whether a string is a plausible Discord Snowflake.
+
+    - https://docs.discord.com/developers/reference#snowflakes
+    - https://medium.com/netcord/discord-snowflake-explained-id-generation-process-a468be00a570
+    - https://discordutils.com/snowflake-decoder
+
+    Parameters
+    ----------
+    snowflake : str
+        The Snowflake value to validate.
+
+    Returns
+    -------
+    bool
+        True if the value is digits only
+        and within the expected Snowflake length range,
+        otherwise False.
+
+    """
     if snowflake is None:
         return False
 
@@ -175,6 +262,24 @@ def is_valid_discord_snowflake(snowflake):
 
 
 def get_guild_info(guild_id):
+    """Retrieve guild information for a given guild ID.
+
+    Attempts to fetch guild info from Discord client's cache first.
+    If not available, checks memcache,
+    and if not cached, fetches from Discord API and caches the result.
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild to retrieve information for.
+
+    Returns
+    -------
+    dict or None
+        A dictionary containing guild 'id' and 'name' if successful,
+        or None if the fetch failed.
+
+    """
     # discord.py keeps cached values for guilds the bot is invited to.
     # get_* functions shouldn't make any API requests when called,
     # values are being updated by receiving on_guild_update event via WebSocket
@@ -211,11 +316,28 @@ def get_guild_info(guild_id):
 
 
 def log_sentry_init_failure(error):
+    """Log a warning when Sentry initialization fails.
+
+    Parameters
+    ----------
+    error : Exception
+        The exception raised by the Sentry SDK initialization attempt.
+
+    """
     rprint("[red]Warning:[/red] Sentry initialization failed!")
     pprint(error)
 
 
 def log_events(events):
+    """Log a list of Discord scheduled events for debugging output.
+
+    Parameters
+    ----------
+    events : list
+        List of event dictionaries containing at least
+        'scheduled_start_time', 'id', and 'name' keys.
+
+    """
     if len(events) == 0:
         rprint("No events found")
         return
@@ -233,7 +355,23 @@ def log_events(events):
 
 
 def retrieve_subscribed_users_for_event(guild_id, event_id):
-    # This endpoint works for both Discoverable and Invite Only servers
+    """Retrieve the list of users subscribed to a specific scheduled event.
+
+    This endpoint works for both Discoverable and Invite Only servers.
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild.
+    event_id : str
+        The ID of the scheduled event.
+
+    Returns
+    -------
+    list or None
+        A list of user dictionaries if successful, or None if the fetch failed.
+
+    """
     url = f"https://discord.com/api/v10/guilds/{guild_id}/scheduled-events/{event_id}/users"
     response = discord_api_http_request(url)
     if response.status_code == requests.codes.ok:  # 200
@@ -256,6 +394,24 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
 
 
 def retrieve_memcached_upcoming_events_for_guild(guild_id):
+    """Retrieve upcoming scheduled events for a guild, using cache if available.
+
+    Attempts to fetch events from memcache first.
+    If not cached, fetches from Discord API,
+    enriches with subscribed users,
+    caches the result, and returns it.
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild to retrieve events for.
+
+    Returns
+    -------
+    list or None
+        A list of event dictionaries if successful, or None if the fetch failed.
+
+    """
     memcache_key = memcache_key_for_guild_events(guild_id)
     cached_response = memcache_client.get(memcache_key)
     if cached_response:
@@ -305,6 +461,25 @@ def retrieve_memcached_upcoming_events_for_guild(guild_id):
 
 
 def upsert_event(event_data: dict):
+    """Upsert a Discord scheduled event into the MongoDB collection.
+
+    Checks for changes in meaningful fields,
+    updates or inserts the event,
+    and logs the action.
+    Converts ISO 8601 timestamps to datetime objects.
+
+    Parameters
+    ----------
+    event_data : dict
+        The event data dictionary from the Discord API response,
+        containing fields like 'id', 'name', 'scheduled_start_time', etc.
+
+    Raises
+    ------
+    PyMongoError
+        If a database operation fails.
+
+    """
     try:
         existing = mongo_collection.find_one({"id": event_data["id"]})
 
@@ -370,6 +545,19 @@ def upsert_event(event_data: dict):
 
 
 def generate_ics_vevent(event):
+    """Convert a Discord scheduled event document into an iCalendar VEVENT.
+
+    Parameters
+    ----------
+    event : dict
+        The event data from MongoDB or Discord API response.
+
+    Returns
+    -------
+    icalendar.Event
+        The VEVENT component representing the event.
+
+    """
     ics_event = Event()
     ics_event.uid = f"{event['id']}@icalcord"
     ics_event.summary = event["name"]
@@ -404,6 +592,20 @@ def generate_ics_vevent(event):
 
 
 def generate_ics_calendar(guild_info):
+    """Generate an ICS feed for the given guild.
+
+    Parameters
+    ----------
+    guild_info : dict
+        Dictionary containing guild information,
+        expected to include the 'id' and 'name' keys.
+
+    Returns
+    -------
+    icalendar.Calendar
+        The Calendar object representing the ICS feed.
+
+    """
     guild_id = f"{guild_info['id']}"
     guild_name = guild_info.get("name", guild_id)
 
@@ -459,6 +661,14 @@ discord_client = discord.Client(intents=discord_intents)
 
 
 def log_http_request(request):
+    """Log an incoming HTTP request with the client IP and requested URL.
+
+    Parameters
+    ----------
+    request : aiohttp.web.Request
+        The incoming HTTP request object.
+
+    """
     # Production instance runs behind reverse proxy,
     # so request.remote returns 127.0.0.1 there.
     # X-Forwarded-For header is set to actual client IP by proxy.
@@ -475,12 +685,14 @@ def log_http_request(request):
 
 
 async def frontend_index(request):
+    """Serve the frontend index page and log the incoming HTTP request."""
     log_http_request(request)
 
     return web.FileResponse(Path(FRONTEND_ROOT_PATH) / "index.html")
 
 
 async def endpoint_handler_preview(request):
+    """Preview event data by resolving a guild snowflake or invite code."""
     log_http_request(request)
 
     snowflake_or_invite_code = request.match_info["snowflake_or_invite_code"]
@@ -546,6 +758,20 @@ async def endpoint_handler_preview(request):
 
 
 async def endpoint_handler_ics_feed_generator(request):
+    """Handle requests to generate an ICS feed for a guild.
+
+    Parameters
+    ----------
+    request : aiohttp.web.Request
+        The incoming HTTP request, expected to contain a guild_id path parameter.
+
+    Returns
+    -------
+    aiohttp.web.Response
+        A response containing the generated iCalendar feed,
+        or a JSON error response if the guild ID is invalid or not found.
+
+    """
     log_http_request(request)
 
     guild_id = request.match_info["guild_id"]
@@ -581,6 +807,19 @@ async def endpoint_handler_ics_feed_generator(request):
 
 
 async def endpoint_handler_suggested_feeds(request):
+    """Handle requests for suggested feeds and return cached or generated JSON.
+
+    Parameters
+    ----------
+    request : aiohttp.web.Request
+        The incoming HTTP request object.
+
+    Returns
+    -------
+    aiohttp.web.Response
+        A JSON response containing suggested guild feed information.
+
+    """
     log_http_request(request)
 
     memcache_key = memcache_key_for_suggested_feeds()
@@ -651,6 +890,12 @@ async def endpoint_handler_suggested_feeds(request):
 
 
 async def start_http_server():
+    """Start the aiohttp web server with configured routes and static file serving.
+
+    Sets up the HTTP server with routes for feed generation, guild preview,
+    and suggested feeds endpoints. Also serves the frontend static files.
+
+    """
     app = web.Application()
 
     # Verify access to a specific Guild.
@@ -681,12 +926,28 @@ async def start_http_server():
 
 
 async def fetch_and_store_upcoming_events_for_guild(guild_id):
+    """Fetch upcoming guild events from Discord API, and return the event list.
+
+    The bot doesn't need to be present on server to fetch events
+    if the server is "Discoverable" (1000+ members)
+    and events are "Public" (default setting).
+
+    https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
+
+    Parameters
+    ----------
+    guild_id : str
+        The ID of the guild to fetch events for.
+
+    Returns
+    -------
+    list or None
+        The list of upcoming scheduled events for the guild,
+        or None if the fetch failed.
+
+    """
     rprint(f"Fetching upcoming events for guild ID: [yellow]{guild_id}[/yellow]")
 
-    # The bot doesn't need to be present on server to fetch events
-    # if the server is "Discoverable" (1000+ members)
-    # and events are "Public" (default setting).
-    # https://docs.discord.com/developers/resources/guild-scheduled-event#list-scheduled-events-for-guild
     discoverable_events_json = retrieve_memcached_upcoming_events_for_guild(guild_id)
     log_events(discoverable_events_json)
 
@@ -705,6 +966,12 @@ async def fetch_and_store_upcoming_events_for_guild(guild_id):
 
 @discord_client.event
 async def on_ready():
+    """Handle the Discord client ready event and start the HTTP server.
+
+    This event is called once the Discord client has successfully connected.
+    It logs the bot Discord credentials
+    and starts the aiohttp server with customer-facing endpoints.
+    """
     rprint(f"Logged into Discord as [yellow]{discord_client.user}[/yellow]")
     await start_http_server()
     rprint(
@@ -713,11 +980,20 @@ async def on_ready():
     )
 
 
-# TODO: implement a slash command (e.g. /icalcord) to respond with
-# .ics feed URL for the server
-# and personalized .ics with events user marked as "interested"
 @discord_client.event
 async def on_message(message):
+    """Handle incoming Discord messages and respond to bot commands.
+
+    TODO: implement a slash command (e.g. /icalcord)
+    to respond with .ics feed URL for the server
+    and personalized .ics with events user marked as "interested"
+
+    Parameters
+    ----------
+    message : discord.Message
+        The message object received from Discord.
+
+    """
     if message.author == discord_client.user:
         return
 
@@ -726,6 +1002,7 @@ async def on_message(message):
 
 
 async def main():
+    """Start the Discord client using the configured bot token."""
     await discord_client.start(config["discord"]["token"])
 
 
