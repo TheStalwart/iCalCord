@@ -315,17 +315,17 @@ def get_guild_info(guild_id):
     return None
 
 
-def log_sentry_init_failure(error):
+def log_sentry_init_failure(exc: Exception) -> None:
     """Log a warning when Sentry initialization fails.
 
     Parameters
     ----------
-    error : Exception
+    exc : Exception
         The exception raised by the Sentry SDK initialization attempt.
 
     """
     rprint("[red]Warning:[/red] Sentry initialization failed!")
-    pprint(error)
+    pprint(exc)
 
 
 def log_events(events):
