@@ -424,12 +424,16 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
     return None
 
 
-def retrieve_memcached_upcoming_events_for_guild(guild_id):
+def retrieve_memcached_upcoming_events_for_guild(
+    guild_id,
+    *,
+    include_subscribed_users=False,
+):
     """Retrieve upcoming scheduled events for a guild, using cache if available.
 
     Attempts to fetch events from memcache first.
     If not cached, fetches from Discord API,
-    enriches with subscribed users,
+    optionally enriches events with subscribed users,
     caches the result, and returns it.
 
     Parameters
@@ -437,10 +441,15 @@ def retrieve_memcached_upcoming_events_for_guild(guild_id):
     guild_id : str
         The ID of the guild to retrieve events for.
 
+    include_subscribed_users : bool, optional
+        Whether to include subscribed user data for each event.
+        Defaults to False.
+
     Returns
     -------
     list or None
-        A list of event dictionaries if successful, or None if the fetch failed.
+        A list of event dictionaries if successful,
+        or None if the fetch failed.
 
     """
     memcache_key = memcache_key_for_guild_events(guild_id)
@@ -469,13 +478,14 @@ def retrieve_memcached_upcoming_events_for_guild(guild_id):
         # and update N oldest entries on every feed request.
         # Another way would be to only refresh subscribed_users
         # if someone requested a custom feed in the last N days.
-        for event in response_json:
-            subscribed_users = retrieve_subscribed_users_for_event(
-                guild_id,
-                event["id"],
-            )
-            if subscribed_users is not None:
-                event["subscribed_users"] = subscribed_users
+        if include_subscribed_users:
+            for event in response_json:
+                subscribed_users = retrieve_subscribed_users_for_event(
+                    guild_id,
+                    event["id"],
+                )
+                if subscribed_users is not None:
+                    event["subscribed_users"] = subscribed_users
 
         memcache_client.set(
             memcache_key,
