@@ -326,9 +326,16 @@ def get_guild_info(guild_id):
         return response_json
 
     rprint(
-        f"[red]Error:[/red] Failed to fetch Discord guild info"
+        f"[red]Error:[/red] Failed ({response.status_code}) to fetch Discord guild info"
         f" for guild ID: [yellow]{guild_id}[/yellow]: {response.content}",
     )
+
+    sentry_sdk.capture_message(
+        f"Request to {url} failed"
+        f" with status code {response.status_code}:"
+        f" {response.content}",
+    )
+
     return None
 
 
@@ -404,9 +411,16 @@ def retrieve_subscribed_users_for_event(guild_id, event_id):
         return response.json()
 
     rprint(
-        f"[red]Error:[/red] Failed to fetch subscribed users"
+        f"[red]Error:[/red] Failed ({response.status_code}) to fetch subscribed users"
         f" for event ID: [yellow]{event_id}[/yellow]: {response.content}",
     )
+
+    sentry_sdk.capture_message(
+        f"Request to {url} failed"
+        f" with status code {response.status_code}:"
+        f" {response.content}",
+    )
+
     return None
 
 
@@ -471,9 +485,16 @@ def retrieve_memcached_upcoming_events_for_guild(guild_id):
         return response_json
 
     rprint(
-        f"[red]Error:[/red] Failed to fetch Discord events"
+        f"[red]Error:[/red] Failed ({response.status_code}) to fetch Discord events"
         f" for guild ID [yellow]{guild_id}[/yellow]: {response.content}",
     )
+
+    sentry_sdk.capture_message(
+        f"Request to {url} failed"
+        f" with status code {response.status_code}:"
+        f" {response.content}",
+    )
+
     return None
 
 
