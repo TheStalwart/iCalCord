@@ -213,6 +213,12 @@ def discord_api_http_request(url):
     There's another thing i don't like about the above function,
     is that it returns an unserializable struct instead of raw JSON response,
     which makes it inconvenient to store in MongoDB.
+    It also drops recurrence_rule field,
+    which is a critical piece of information for generating correct ICS output.
+    There's a PR to add support for recurrence_rule field in the internal client,
+    and it's been sitting there unmerged for years:
+    https://github.com/Rapptz/discord.py/pull/9685
+
     It's possible to bypass the response parsing with this function:
     ```
     data = await discord_client.http.request(
