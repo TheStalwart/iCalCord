@@ -1062,6 +1062,10 @@ async def on_message(message: discord.Message) -> None:
     to respond with .ics feed URL for the server
     and personalized .ics with events user marked as "interested"
 
+    WARNING: Discord.py docs state this is a bad idea,
+    and individual slash-command handlers should be implemented instead
+    https://discordpy.readthedocs.io/en/latest/faq.html#why-does-on-message-make-my-commands-stop-working
+
     Parameters
     ----------
     message : discord.Message
