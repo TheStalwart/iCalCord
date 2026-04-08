@@ -528,6 +528,45 @@ def retrieve_memcached_upcoming_events_for_guild(
     return None
 
 
+def diff_event(existing: dict | None, fresh: dict) -> bool:
+    """Whether or not the event was edited.
+
+    Compares the existing event data with the new event data
+    and returns True if any meaningful fields have changed.
+
+    This is primarily to address the `scheduled_start_time` field
+    always pointing to the next instance of recurring event,
+    even though the event itself was not edited.
+
+    Parameters
+    ----------
+    existing : dict | None
+        The existing event data, typically retrieved from MongoDB.
+    fresh : dict
+        The fresh event data, typically retrieved from the Discord API.
+
+    Returns
+    -------
+    bool
+        Whether or not the event was edited
+        in a way that affects the generated ICS output.
+
+    """
+    meaningful_fields = EVENT_MEANINGFUL_FIELDS.copy()
+    if fresh.get("recurrence_rule"):
+        # For recurring events,
+        # `scheduled_start_time` always points to the next occurrence,
+        # which is useful when previewing the event data,
+        # but does not indicate the event was edited,
+        # and also isn't used in ICS output
+        # because `recurrence_rule.start` is used instead.
+        meaningful_fields.remove("scheduled_start_time")
+
+    return existing is None or any(
+        fresh.get(field) != existing.get(field) for field in meaningful_fields
+    )
+
+
 def upsert_event(event_data: dict) -> None:
     """Upsert a Discord scheduled event into the MongoDB collection.
 
@@ -552,10 +591,7 @@ def upsert_event(event_data: dict) -> None:
         existing = mongo_collection.find_one({"id": event_data["id"]})
 
         # Check if any of the meaningful fields changed
-        data_changed = existing is None or any(
-            event_data.get(field) != existing.get(field)
-            for field in EVENT_MEANINGFUL_FIELDS
-        )
+        data_changed = diff_event(existing, event_data)
 
         event_update = {
             "$set": {
