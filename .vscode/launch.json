@@ -7,16 +7,15 @@
       "request": "launch",
       "program": "bot.py",
       "console": "integratedTerminal",
-      "args": [
-        "--debug",
-      ]
+      "justMyCode": false,
+      "args": ["--debug"]
     },
     {
       "name": "Python Debugger: bot.py",
       "type": "debugpy",
       "request": "launch",
       "program": "bot.py",
-      "console": "integratedTerminal",
-    },
+      "console": "integratedTerminal"
+    }
   ]
 }
