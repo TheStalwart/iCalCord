@@ -195,29 +195,43 @@ def discord_api_http_request(url):
     without the bot being present on the server.
     https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
 
-    Also, these kinds of direct API calls:
+    I talked to discord.py devs,
+    and they suggested to create a thread in #bikeshedding category
+    of their official Discord server.
+    https://discord.com/channels/336642139381301249/1491295357601321030
+
+    Calling internal aiohttp client directly with these kinds of calls:
     ```
     discord_client.http.get_scheduled_events(guild_id, with_user_count=True)
     ```
+    triggers rate-limiter bug and stalls for 10 seconds before returning the value.
+    So two more discussion thread were created:
+    https://discord.com/channels/336642139381301249/1491283868211351735
+    https://discord.com/channels/336642139381301249/1491288197324476587
 
-    as well as using internal HTTP client with arbitrary URL:
+    There's another thing i don't like about the above function,
+    is that it returns an unserializable struct instead of raw JSON response,
+    which makes it inconvenient to store in MongoDB.
+    It's possible to bypass the response parsing with this function:
     ```
     data = await discord_client.http.request(
         discord.http.Route("GET", f"/guilds/{guild_id}/scheduled-events"),
     )
     ```
+    but it trips on the same rate-limiter bug as `get_scheduled_events()` function.
 
-    stall for MULTIPLE SECONDS,
-    and it's MUCH FASTER to bypass discord.py entirely.
+    So until rate-limiter issues are resolved, i'm bypassing discord.py entirely,
+    but there are issues with this approach as well,
+    such as lack of rate limit handling,
+    and the blocking nature of requests library,
+    which can stall aiohttp server and discord.py if Discord API is slow to respond.
 
-    I also don't like the fact
-    discord.py doesn't expose original JSON response,
-    as i want to keep a copy of scheduled event JSON in the database.
+    If rate limiting and/or blocking becomes a bigger issue before discord.py is fixed,
+    i could drop-in replace requests with aiohttp library,
+    or try to fork/hack/fix discord.py's internal aiohttp client.
 
-    However, `discord.http` is aiohttp-based
-    and implements Discord-specific rate limit handling,
-    so i might try to use it again later,
-    and see if i can work around the slow request and typed response issues.
+    As of April 2026, i resolved a rate-limiter hit by making fewer API calls
+    and not hoarding data that might never be used.
 
     Parameters
     ----------
