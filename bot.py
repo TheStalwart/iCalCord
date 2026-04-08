@@ -214,6 +214,11 @@ def discord_api_http_request(url):
     discord.py doesn't expose original JSON response,
     as i want to keep a copy of scheduled event JSON in the database.
 
+    However, `discord.http` is aiohttp-based
+    and implements Discord-specific rate limit handling,
+    so i might try to use it again later,
+    and see if i can work around the slow request and typed response issues.
+
     Parameters
     ----------
     url : str
