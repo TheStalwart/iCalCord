@@ -50,6 +50,7 @@ EVENT_MEANINGFUL_FIELDS = [
     "description",
     "scheduled_start_time",
     "scheduled_end_time",
+    "recurrence_rule",
     "entity_metadata",  # .location
 ]
 
