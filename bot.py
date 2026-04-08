@@ -20,7 +20,7 @@ import requests
 import sentry_sdk
 import yaml
 from aiohttp import web
-from icalendar import Calendar, Event, FreeBusy
+from icalendar import Calendar, Event, FreeBusy, vRecur
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from rich import print as rprint
@@ -654,6 +654,55 @@ def upsert_event(event_data: dict) -> None:
         raise
 
 
+def discord_recurrence_rule_to_vrecur(recurrence_rule: dict) -> vRecur:
+    """Convert a Discord API recurrence rule to an iCalendar vRecur object.
+
+    Discord API docs claim their recurrence rules are based on iCalendar RFC 5545:
+    https://docs.discord.com/developers/resources/guild-scheduled-event#guild-scheduled-event-recurrence-rule-object
+
+    But the mapping is not 1:1, some ENUMs need to be converted
+    https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html
+
+    Parameters
+    ----------
+    recurrence_rule : dict
+        The recurrence rule data from the Discord API response,
+        expected to include 'frequency' and 'interval' keys.
+
+    Returns
+    -------
+    vRecur
+        The iCalendar vRecur object representing the recurrence rule.
+
+    """
+    params = {}
+
+    frequency = recurrence_rule.get("frequency")
+    if frequency:
+        params["FREQ"] = ["YEARLY", "MONTHLY", "WEEKLY", "DAILY"][frequency]
+
+    interval = recurrence_rule.get("interval")
+    if interval:
+        params["INTERVAL"] = interval
+
+    by_weekday = recurrence_rule.get("by_weekday")
+    if by_weekday:
+        # Discord API represents weekdays as integers 0-6 (Monday-Sunday),
+        # while iCalendar uses MO, TU, WE, TH, FR, SA, SU.
+        weekday_mapping = {
+            0: "MO",
+            1: "TU",
+            2: "WE",
+            3: "TH",
+            4: "FR",
+            5: "SA",
+            6: "SU",
+        }
+        params["BYDAY"] = [weekday_mapping[day] for day in by_weekday]
+
+    return vRecur(params)
+
+
 def generate_ics_vevent(event: dict) -> Event:
     """Convert a Discord scheduled event document into an iCalendar VEVENT.
 
@@ -673,8 +722,16 @@ def generate_ics_vevent(event: dict) -> Event:
     ics_event.summary = event["name"]
     ics_event.stamp = event.get("icalcord_updated_time")
 
-    # I'm not gonna throw away old event data (right now)
-    if event.get("icalcord_scheduled_start_time"):
+    rrules = event.get("recurrence_rule")
+    if rrules:
+        ics_event.start = datetime.fromisoformat(rrules["start"])
+        ics_event.add("RRULE", discord_recurrence_rule_to_vrecur(rrules))
+    elif event.get("icalcord_scheduled_start_time"):
+        # For non-recurring events, use the scheduled_start_time as the DTSTART.
+        # Value resolver is a bit of a mess
+        # due to me overwriting scheduled_start_time with a derivative datetime value
+        # for early records in the database,
+        # but i'm not gonna throw away old event data (right now)
         ics_event.start = event["icalcord_scheduled_start_time"]
     elif isinstance(event["scheduled_start_time"], datetime):
         ics_event.start = event["scheduled_start_time"]
