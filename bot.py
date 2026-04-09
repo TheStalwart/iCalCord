@@ -197,6 +197,9 @@ def discord_api_http_request(url):
     https://docs.discord.com/developers/resources/guild-scheduled-event
     https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
 
+    I'm not sure this is intentional:
+    https://discord.com/channels/613425648685547541/1130595287078015027/1491755830247293038
+
     I talked to discord.py devs,
     and they suggested to create a thread in #bikeshedding category
     of their official Discord server.
