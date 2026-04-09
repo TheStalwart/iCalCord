@@ -192,8 +192,9 @@ def discord_api_http_request(url):
 
     discord.py internal intent-based event-listening architecture
     collides with the fact
-    Discoverable guilds allow fetching scheduled event data
+    Discoverable guilds allow fetching EXTERNAL (entity_type: 3) scheduled event data
     without the bot being present on the server.
+    https://docs.discord.com/developers/resources/guild-scheduled-event
     https://deepwiki.com/Rapptz/discord.py/7.3-scheduled-events
 
     I talked to discord.py devs,
