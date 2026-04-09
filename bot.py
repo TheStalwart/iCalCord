@@ -234,8 +234,9 @@ def discord_api_http_request(url):
     which can stall aiohttp server and discord.py if Discord API is slow to respond.
 
     If rate limiting and/or blocking becomes a bigger issue before discord.py is fixed,
-    i could drop-in replace requests with aiohttp library,
-    or try to fork/hack/fix discord.py's internal aiohttp client.
+    i could drop-in replace requests with aiohttp library.
+    https://docs.aiohttp.org/en/stable/http_request_lifecycle.html
+    Or try to fork/hack/fix discord.py's internal aiohttp client.
 
     As of April 2026, i resolved a rate-limiter hit by making fewer API calls
     and not hoarding data that might never be used.
