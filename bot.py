@@ -746,7 +746,11 @@ def generate_ics_vevent(event: dict) -> Event:
     else:
         ics_event.start = datetime.fromisoformat(event["scheduled_start_time"])
 
-    if event.get("icalcord_scheduled_end_time"):
+    if rrules:
+        if rrules.get("end"):
+            ics_event.end = datetime.fromisoformat(rrules["end"])
+        # For recurring events without an end date, we don't set DTEND
+    elif event.get("icalcord_scheduled_end_time"):
         ics_event.end = event["icalcord_scheduled_end_time"]
     elif isinstance(event["scheduled_end_time"], datetime):
         ics_event.end = event["scheduled_end_time"]
