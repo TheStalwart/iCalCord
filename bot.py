@@ -708,6 +708,18 @@ def discord_recurrence_rule_to_vrecur(recurrence_rule: dict) -> vRecur:
         }
         params["BYDAY"] = [weekday_mapping[day] for day in by_weekday]
 
+    by_month = recurrence_rule.get("by_month")
+    if by_month is not None:
+        # Discord API represents months as integers 1-12 (January-December),
+        # same as iCalendar spec
+        params["BYMONTH"] = by_month
+
+    by_month_day = recurrence_rule.get("by_month_day")
+    if by_month_day is not None:
+        # Discord API represents month days as integers 1-31,
+        # same as iCalendar spec
+        params["BYMONTHDAY"] = by_month_day
+
     return vRecur(params)
 
 
