@@ -545,7 +545,8 @@ def diff_event(existing: dict | None, fresh: dict) -> bool:
     Compares the existing event data with the new event data
     and returns True if any meaningful fields have changed.
 
-    This is primarily to address the `scheduled_start_time` field
+    This is primarily to address
+    the `scheduled_start_time` and `scheduled_end_time` fields
     always pointing to the next instance of recurring event,
     even though the event itself was not edited.
 
@@ -566,12 +567,14 @@ def diff_event(existing: dict | None, fresh: dict) -> bool:
     meaningful_fields = EVENT_MEANINGFUL_FIELDS.copy()
     if fresh.get("recurrence_rule"):
         # For recurring events,
-        # `scheduled_start_time` always points to the next occurrence,
+        # `scheduled_start_time` and `scheduled_end_time`
+        # always point to the next occurrence,
         # which is useful when previewing the event data,
         # but does not indicate the event was edited,
         # and also isn't used in ICS output
         # because `recurrence_rule.start` is used instead.
         meaningful_fields.remove("scheduled_start_time")
+        meaningful_fields.remove("scheduled_end_time")
 
     return existing is None or any(
         fresh.get(field) != existing.get(field) for field in meaningful_fields
