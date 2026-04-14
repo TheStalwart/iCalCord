@@ -686,15 +686,15 @@ def discord_recurrence_rule_to_vrecur(recurrence_rule: dict) -> vRecur:
     params = {}
 
     frequency = recurrence_rule.get("frequency")
-    if frequency:
+    if frequency is not None:
         params["FREQ"] = ["YEARLY", "MONTHLY", "WEEKLY", "DAILY"][frequency]
 
     interval = recurrence_rule.get("interval")
-    if interval:
+    if interval is not None:
         params["INTERVAL"] = interval
 
     by_weekday = recurrence_rule.get("by_weekday")
-    if by_weekday:
+    if by_weekday is not None:
         # Discord API represents weekdays as integers 0-6 (Monday-Sunday),
         # while iCalendar uses MO, TU, WE, TH, FR, SA, SU.
         weekday_mapping = {
