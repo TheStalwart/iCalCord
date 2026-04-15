@@ -769,16 +769,8 @@ def generate_ics_vevent(event: dict) -> Event:
         # but i prefer to keep a history of past events in the feed
         ics_event.start = datetime.fromisoformat(rrules["start"])
         ics_event.add("RRULE", discord_recurrence_rule_to_vrecur(rrules))
-    elif event.get("icalcord_scheduled_start_time"):
-        # For non-recurring events, use the scheduled_start_time as the DTSTART.
-        # Value resolver is a bit of a mess
-        # due to me overwriting scheduled_start_time with a derivative datetime value
-        # for early records in the database,
-        # but i'm not gonna throw away old event data (right now)
-        ics_event.start = event["icalcord_scheduled_start_time"]
-    elif isinstance(event["scheduled_start_time"], datetime):
-        ics_event.start = event["scheduled_start_time"]
     else:
+        # For non-recurring events, use the scheduled_start_time as the DTSTART.
         ics_event.start = datetime.fromisoformat(event["scheduled_start_time"])
 
     if rrules:
@@ -803,11 +795,6 @@ def generate_ics_vevent(event: dict) -> Event:
             # Sensible fallback value,
             # no specific reason for it to be 1 hour long though
             ics_event.duration = timedelta(hours=1)
-
-    elif event.get("icalcord_scheduled_end_time"):
-        ics_event.end = event["icalcord_scheduled_end_time"]
-    elif isinstance(event["scheduled_end_time"], datetime):
-        ics_event.end = event["scheduled_end_time"]
     elif event["scheduled_end_time"]:
         ics_event.end = datetime.fromisoformat(event["scheduled_end_time"])
     # Unless 'entity_type': 3,
