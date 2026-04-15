@@ -782,9 +782,28 @@ def generate_ics_vevent(event: dict) -> Event:
         ics_event.start = datetime.fromisoformat(event["scheduled_start_time"])
 
     if rrules:
-        if rrules.get("end"):
-            ics_event.end = datetime.fromisoformat(rrules["end"])
-        # For recurring events without an end date, we don't set DTEND
+        # Google Calendar is fucking special
+        # and makes recurring events with no DTEND nor DURATION
+        # be 9 months, 2 days and 9 hours long.
+        # However, Discord is fucking special as well,
+        # and always resets scheduled_end_time to the next occurrence of the event,
+        # so we need to calculate the duration of the original event
+        # from the values of the next occurrence
+        if event.get(
+            "scheduled_start_time",
+        ) and event.get(
+            "scheduled_end_time",
+        ):
+            ics_event.duration = datetime.fromisoformat(
+                event["scheduled_end_time"],
+            ) - datetime.fromisoformat(
+                event["scheduled_start_time"],
+            )
+        else:
+            # Sensible fallback value,
+            # no specific reason for it to be 1 hour long though
+            ics_event.duration = timedelta(hours=1)
+
     elif event.get("icalcord_scheduled_end_time"):
         ics_event.end = event["icalcord_scheduled_end_time"]
     elif isinstance(event["scheduled_end_time"], datetime):
