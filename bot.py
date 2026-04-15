@@ -1160,13 +1160,18 @@ async def fetch_and_store_upcoming_events_for_guild(guild_id):
     rprint(f"Fetching upcoming events for guild ID: [yellow]{guild_id}[/yellow]")
 
     discoverable_events_json = retrieve_memcached_upcoming_events_for_guild(guild_id)
-    log_events(discoverable_events_json)
 
     # TODO: do not update MongoDB entries
     # if `discoverable_events_json` was returned from memcache
     if discoverable_events_json is not None:
+        log_events(discoverable_events_json)
         for event_json in discoverable_events_json:
             upsert_event(event_json)
+    else:
+        rprint(
+            "[red]Warning:[/red] client will receive feed based on data"
+            " previously collected in MongoDB (if any)",
+        )
 
     # TODO: Delete upcoming events that are absent from API response?
     # Is there a more reliable way to detect deleted events
