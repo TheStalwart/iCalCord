@@ -726,6 +726,19 @@ def discord_recurrence_rule_to_vrecur(recurrence_rule: dict) -> vRecur:
         # same as iCalendar spec
         params["BYMONTHDAY"] = by_month_day
 
+    # set UNTIL value to "end" property,
+    # or cap until current date + 4 years if "end" is not set,
+    # to prevent calendar apps from generating infinite occurrences
+    # and match Discord App behavior
+    if recurrence_rule.get("end"):
+        params["UNTIL"] = datetime.fromisoformat(recurrence_rule["end"])
+    else:
+        params["UNTIL"] = (
+            datetime.now(timezone.utc) + timedelta(days=365 * 4)
+        ).replace(hour=23, minute=59, second=59, microsecond=0)
+        # Claude Sonnet 4.6 suggests to replace time component with 23:59:59
+        # to improve compatibility with Apple Calendar
+
     return vRecur(params)
 
 
