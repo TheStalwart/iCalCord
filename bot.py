@@ -750,6 +750,10 @@ def generate_ics_vevent(event: dict) -> Event:
 
     rrules = event.get("recurrence_rule")
     if rrules:
+        # For recurring events,
+        # Discord API always sets "scheduled_start_time"
+        # to the next occurrence of the event,
+        # but i prefer to keep a history of past events in the feed
         ics_event.start = datetime.fromisoformat(rrules["start"])
         ics_event.add("RRULE", discord_recurrence_rule_to_vrecur(rrules))
     elif event.get("icalcord_scheduled_start_time"):
