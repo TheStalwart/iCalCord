@@ -118,7 +118,7 @@ def initialize_sentry_sdk() -> None:
 initialize_sentry_sdk()
 
 # Create MongoDB connection
-mongo_client = MongoClient(config["mongodb"]["url"], retryWrites=True)
+mongo_client = MongoClient(config["mongodb"]["url"], retryWrites=True, tz_aware=True)
 mongo_db = mongo_client.get_default_database()
 mongo_collection = mongo_db.events
 
