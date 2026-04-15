@@ -1,10 +1,22 @@
 function getDiscordInviteCode(input) {
   if (typeof input !== "string") return null;
 
+  /*
+  Usually, Discord invite links look like this:
+  https://discord.gg/abc123
+  https://discord.com/invite/abc123
+
+  But in logs i also encountered API endpoint paths:
+  https://discord.com/api/v10/invites/abc123
+
+  This regex should capture the invite code (abc123)
+  from any these, or similar URLs.
+  */
+
   const m = input
     .trim()
     .match(
-      /^https?:\/\/(?:www\.)?(?:discord\.gg|discord\.com\/invite)\/([A-Za-z0-9-]+)\/?$/,
+      /^https?:\/\/(?:www\.)?discord[.\w]+\/(?:[\w/]+\/)?([A-Za-z0-9-]+)\/?$/,
     );
 
   return m ? m[1] : null;
