@@ -35,6 +35,12 @@ FRONTEND_STATIC_PATH = Path(FRONTEND_ROOT_PATH) / "static"
 # Guild Object Fields worth returning to frontend
 GUILD_MEANINGFUL_FIELDS = ["id", "name", "description"]
 
+# Oldest timestamp to output in ICS feeds,
+# to force calendar apps to refresh events
+# that didn't have their source data changed,
+# but output is now different due to changes in the codebase.
+ICALCORD_TIMESTAMP_CAP = datetime(2026, 4, 15, tzinfo=timezone.utc)
+
 # Guild Scheduled Event Object Fields that indicate a meaningful change to the event.
 #
 # Discord API output includes fields that may change
@@ -740,7 +746,7 @@ def generate_ics_vevent(event: dict) -> Event:
     ics_event = Event()
     ics_event.uid = f"{event['id']}@icalcord"
     ics_event.summary = event["name"]
-    ics_event.stamp = event.get("icalcord_updated_time")
+    ics_event.stamp = max(event.get("icalcord_updated_time"), ICALCORD_TIMESTAMP_CAP)
 
     rrules = event.get("recurrence_rule")
     if rrules:
@@ -834,7 +840,7 @@ def generate_ics_calendar(guild_info):
         # Arbitrary fixed date,
         # not too far in the past to avoid client rejections,
         # not too far in the future to avoid confusion
-        vfreebusy.stamp = datetime(2026, 3, 1, tzinfo=timezone.utc)
+        vfreebusy.stamp = ICALCORD_TIMESTAMP_CAP
         ics.add_component(vfreebusy)
 
     if args.debug:
