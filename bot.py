@@ -39,7 +39,9 @@ GUILD_MEANINGFUL_FIELDS = ["id", "name", "description"]
 # to force calendar apps to refresh events
 # that didn't have their source data changed,
 # but output is now different due to changes in the codebase.
-ICALCORD_TIMESTAMP_CAP = datetime(2026, 4, 15, tzinfo=timezone.utc)
+# Google Calendar backend still takes 2-3 days
+# to refresh recurring events though.
+ICALCORD_TIMESTAMP_CAP = datetime(2026, 4, 17, tzinfo=timezone.utc)
 
 # Guild Scheduled Event Object Fields that indicate a meaningful change to the event.
 #
