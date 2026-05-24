@@ -36,6 +36,10 @@ icalcord.retromultiplayer.com {
                 reverse_proxy localhost:8080
         }
 
+        handle /preview/* {
+                reverse_proxy localhost:8080
+        }
+
         handle /suggested.json {
                 reverse_proxy localhost:8080
         }
