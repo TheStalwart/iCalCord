@@ -23,6 +23,34 @@ Open the `devcontainer.json` and follow instructions in comments.
 1. Run memcached instance
 1. Copy `config.yaml.example` to `config.yaml` and fill in values.
 
+## Production environment
+
+Example Caddyfile to serve static frontend files directly,
+and only reverse proxy dynamic content:
+
+```caddyfile
+icalcord.retromultiplayer.com {
+        root * /home/icalcord/iCalCord/frontend
+
+        handle /feed/* {
+                reverse_proxy localhost:8080
+        }
+
+        handle /suggested.json {
+                reverse_proxy localhost:8080
+        }
+
+        handle /favicon.ico {
+                root * /home/icalcord/iCalCord/frontend/static/logo
+                file_server
+        }
+
+        handle {
+                file_server
+        }
+}
+```
+
 ## Requirements
 
 - Python 3.9
